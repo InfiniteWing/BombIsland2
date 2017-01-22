@@ -50,11 +50,13 @@ public class GameView extends SurfaceView implements
     public SoundManager soundManager;
     public Bluetooth.ConnectedThread connectedThread;
     public int gameTime = 0, getMoney = 0,aiCount=0;
-    public int FrameBalancer = 0,gameEndFrameCounter=0;
+    public int FrameBalancer = 0,gameEndFrameCounter=0,controlMode=0;
     public boolean hadInitPlayer = false, hadInitBT = false, isGameStart = false, isGameEnd = false, isWin = false;
     public boolean hadSave = false, hadSaveGameEnd = false, hadPlayExplosion = false;
     public String playerID, playerMoveStr = "";
     public MediaPlayer gamebackgroundsound;
+    public double touchInitX,touchInitY,touchNowX,touchNowY;
+    public boolean isControlDirection;
 
     public GameView(Context context, String playerID, String mapID, int aiCount, String aiInfo, MediaPlayer gamebackgroundsound) {
         super(context);
@@ -199,16 +201,39 @@ public class GameView extends SurfaceView implements
                 e.getCause();
             }
         }
-        try {
-            Bitmap direction = map.imageCaches.get("direction.png");
-            canvas.drawBitmap(direction,
-                    (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
-                    (screenHeight * 2) / Common.GAME_HEIGHT_UNIT,
-                    alphaPaint);
-        } catch (Exception e) {
-            e.getCause();
-        }
 
+        if(controlMode==1){
+            if(isControlDirection){
+                double widthOffset=screenWidth / Common.GAME_WIDTH_UNIT;
+                double heightOffset=screenHeight / Common.GAME_HEIGHT_UNIT;
+                try {
+                    Bitmap directionOut = map.imageCaches.get("direction_out.png");
+                    alphaPaint.setAlpha(160);
+                    canvas.drawBitmap(directionOut,
+                            (float)(touchInitX-widthOffset*2),
+                            (float)(touchInitY-heightOffset*2),
+                            alphaPaint);
+                    Bitmap directionIn = map.imageCaches.get("direction_in.png");
+                    alphaPaint.setAlpha(70);
+                    canvas.drawBitmap(directionIn,
+                            (float)(touchNowX-widthOffset*1),
+                            (float)(touchNowY-heightOffset*1),
+                            alphaPaint);
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
+        }else{
+            try {
+                Bitmap direction = map.imageCaches.get("direction.png");
+                canvas.drawBitmap(direction,
+                        (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
+                        (screenHeight * 2) / Common.GAME_HEIGHT_UNIT,
+                        alphaPaint);
+            } catch (Exception e) {
+                e.getCause();
+            }
+        }
         if (isGameEnd) {
             gameEndFrameCounter++;
             canvas.drawARGB(60, 0, 0, 0);
@@ -607,61 +632,116 @@ public class GameView extends SurfaceView implements
                     if (player.uid.equals(playerID)) {
                         player.IsMoving = false;
                         player.speed_now = 0;
+                        isControlDirection=false;
                     }
                 }
                 break;
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
-                Touch(event.getX(0), event.getY(0));
+                Touch(event.getX(0), event.getY(0),true);
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                Touch(event.getX(1), event.getY(1));
-                break;
+                Touch(event.getX(1), event.getY(1),false);
+            break;
         }
         return true;
     }
 
-    public void Touch(double x, double y) {
+    public void Touch(double x, double y,boolean Single) {
         if (x > screenWidth / 2) {
             for (Player player : map.players) {
                 if (player.uid.equals(playerID)) {
                     player.AddBomb();
                 }
             }
-        } else {
-            int controlW = 8 * screenWidth / Common.GAME_WIDTH_UNIT;
-            int controlH = 8 * screenHeight / Common.GAME_HEIGHT_UNIT;
-            x -= screenWidth / Common.GAME_WIDTH_UNIT;
-            y -= 2 * screenHeight / Common.GAME_HEIGHT_UNIT;
-            int centerX = controlW / 2, centerY = controlH / 2;
-            int touchX = (int) x - centerX;
-            int touchY = (int) y - centerY;
-            if (touchX > 0 && touchX < centerX) {
-                if (touchY > 0 && touchY < centerY) {
-                    if (Math.abs(touchX) > Math.abs(touchY)) {
-                        PlayerMove(Location.LOCATION_RIGHT, playerID);
-                    } else {
-                        PlayerMove(Location.LOCATION_DOWN, playerID);
-                    }
-                } else if (touchY < 0) {
-                    if (Math.abs(touchX) > Math.abs(touchY)) {
-                        PlayerMove(Location.LOCATION_RIGHT, playerID);
-                    } else {
-                        PlayerMove(Location.LOCATION_TOP, playerID);
+            if(Single&&controlMode==1){
+                isControlDirection=false;
+                for (Player player : map.players) {
+                    if (player.uid.equals(playerID)) {
+                        player.IsMoving = false;
+                        player.speed_now = 0;
+                        isControlDirection=false;
                     }
                 }
-            } else if (touchX < 0) {
-                if (touchY > 0 && touchY < centerY) {
-                    if (Math.abs(touchX) > Math.abs(touchY)) {
-                        PlayerMove(Location.LOCATION_LEFT, playerID);
-                    } else {
-                        PlayerMove(Location.LOCATION_DOWN, playerID);
+            }
+        } else {
+            if(controlMode==1) {
+                if (isControlDirection) {
+                    touchNowX = x;
+                    touchNowY = y;
+                    double touchX = x - touchInitX;
+                    double touchY = y - touchInitY;
+                    if (touchX > 0) {
+                        if (touchY > 0) {
+                            if (Math.abs(touchX) > Math.abs(touchY)) {
+                                PlayerMove(Location.LOCATION_RIGHT, playerID);
+                            } else {
+                                PlayerMove(Location.LOCATION_DOWN, playerID);
+                            }
+                        } else if (touchY < 0) {
+                            if (Math.abs(touchX) > Math.abs(touchY)) {
+                                PlayerMove(Location.LOCATION_RIGHT, playerID);
+                            } else {
+                                PlayerMove(Location.LOCATION_TOP, playerID);
+                            }
+                        }
+                    } else if (touchX < 0) {
+                        if (touchY > 0) {
+                            if (Math.abs(touchX) > Math.abs(touchY)) {
+                                PlayerMove(Location.LOCATION_LEFT, playerID);
+                            } else {
+                                PlayerMove(Location.LOCATION_DOWN, playerID);
+                            }
+                        } else if (touchY < 0) {
+                            if (Math.abs(touchX) > Math.abs(touchY)) {
+                                PlayerMove(Location.LOCATION_LEFT, playerID);
+                            } else {
+                                PlayerMove(Location.LOCATION_TOP, playerID);
+                            }
+                        }
                     }
-                } else if (touchY < 0) {
-                    if (Math.abs(touchX) > Math.abs(touchY)) {
-                        PlayerMove(Location.LOCATION_LEFT, playerID);
-                    } else {
-                        PlayerMove(Location.LOCATION_TOP, playerID);
+                } else {
+                    isControlDirection = true;
+                    touchInitX = x;
+                    touchInitY = y;
+                    touchNowX = x;
+                    touchNowY = y;
+                }
+            }else{
+                int controlW = 6 * screenWidth / Common.GAME_WIDTH_UNIT;
+                int controlH = 6 * screenHeight / Common.GAME_HEIGHT_UNIT;
+                x -= screenWidth / Common.GAME_WIDTH_UNIT;
+                y -= 2 * screenHeight / Common.GAME_HEIGHT_UNIT;
+                int centerX = controlW / 2, centerY = controlH / 2;
+                int touchX = (int) x - centerX;
+                int touchY = (int) y - centerY;
+                if (touchX > 0 && touchX < centerX) {
+                    if (touchY > 0 && touchY < centerY) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_RIGHT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_DOWN, playerID);
+                        }
+                    } else if (touchY < 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_RIGHT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_TOP, playerID);
+                        }
+                    }
+                } else if (touchX < 0) {
+                    if (touchY > 0 && touchY < centerY) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_LEFT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_DOWN, playerID);
+                        }
+                    } else if (touchY < 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_LEFT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_TOP, playerID);
+                        }
                     }
                 }
             }

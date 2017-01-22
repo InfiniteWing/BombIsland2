@@ -100,13 +100,35 @@ public class Map {
         Bitmap source = Common.getBitmapFromAsset("map/direction.png");
         Matrix matrix = new Matrix();
         matrix.reset();
-        float width = 8 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
-        float height = 8 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        float width = 6 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        float height = 6 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
         matrix.postScale((width / source.getWidth()), height / source.getHeight());
 
         source = Bitmap.createBitmap(source, 0, 0,
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("direction.png", source);
+
+        source = Common.getBitmapFromAsset("map/direction_out.png");
+        matrix = new Matrix();
+        matrix.reset();
+        width = 4 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 4 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("direction_out.png", source);
+
+        source = Common.getBitmapFromAsset("map/direction_in.png");
+        matrix = new Matrix();
+        matrix.reset();
+        width = 2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("direction_in.png", source);
 
         source = Common.getBitmapFromAsset("map/lose.png");
         matrix = new Matrix();
