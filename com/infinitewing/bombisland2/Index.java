@@ -93,7 +93,8 @@ public class Index extends Activity {
                             .show();
                     break;
                 case R.id.index_4:
-                    Toast.makeText(getApplicationContext(), R.string.index_building, Toast.LENGTH_SHORT).show();
+                    intent = new Intent(Index.this, GameSetting.class);
+                    startActivity(intent);
                     break;
                 case R.id.index_5:
                     Toast.makeText(getApplicationContext(), R.string.index_building, Toast.LENGTH_SHORT).show();

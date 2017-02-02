@@ -194,6 +194,7 @@ public class Player {
             if(bubbledTime>Common.GAME_REFRESH*100){
                 IsDead=true;
                 Common.gameView.soundManager.addSound(deadSound);
+                Common.gameView.StartVibrator();
                 ExplodeItems();
             }
             return;
@@ -242,6 +243,7 @@ public class Player {
         deadExplosion.delay = 0;
         IsDead=true;
         Common.gameView.soundManager.addSound(deadSound);
+        Common.gameView.StartVibrator();
         ExplodeItems();
     }
     public void CheckItem() {

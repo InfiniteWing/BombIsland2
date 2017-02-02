@@ -1,7 +1,9 @@
 package com.infinitewing.bombisland2;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -13,6 +15,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.media.MediaPlayer;
 import android.os.Environment;
+import android.os.Vibrator;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -49,19 +52,29 @@ public class GameView extends SurfaceView implements
     public int screenWidth, screenHeight;
     public SoundManager soundManager;
     public Bluetooth.ConnectedThread connectedThread;
-    public int gameTime = 0, getMoney = 0,aiCount=0;
-    public int FrameBalancer = 0,gameEndFrameCounter=0,controlMode=0;
+    public int gameTime = 0, getMoney = 0, aiCount = 0;
+    public int FrameBalancer = 0, gameEndFrameCounter = 0;
     public boolean hadInitPlayer = false, hadInitBT = false, isGameStart = false, isGameEnd = false, isWin = false;
     public boolean hadSave = false, hadSaveGameEnd = false, hadPlayExplosion = false;
     public String playerID, playerMoveStr = "";
     public MediaPlayer gamebackgroundsound;
-    public double touchInitX,touchInitY,touchNowX,touchNowY;
+    public double touchInitX, touchInitY, touchNowX, touchNowY;
     public boolean isControlDirection;
+    private SharedPreferences sp;
+    public boolean BGM, effSound, effVibrator;
+    private int controlMode;
+    public Vibrator vibrator;
 
     public GameView(Context context, String playerID, String mapID, int aiCount, String aiInfo, MediaPlayer gamebackgroundsound) {
         super(context);
         this.context = context;
         Common.SetGameView(this);
+        vibrator = (Vibrator) context.getSystemService(Service.VIBRATOR_SERVICE);
+        sp = context.getSharedPreferences(Common.APP_NAME, context.MODE_PRIVATE);
+        BGM = sp.getBoolean("BGM", true);
+        effSound = sp.getBoolean("effSound", true);
+        effVibrator = sp.getBoolean("effVibrator", true);
+        controlMode = sp.getInt("controlMode", 0);
         this.getHolder().addCallback(this);
         this.gamebackgroundsound = gamebackgroundsound;
         screenWidth = Common.SCREEN_WIDTH;
@@ -72,7 +85,7 @@ public class GameView extends SurfaceView implements
         BT_MODE = false;
         IS_SERVER = false;
         gameThread = new GameThread(this, this.getHolder());
-        this.aiCount=aiCount;
+        this.aiCount = aiCount;
         map = new Map(mapID, playerID, aiCount, aiInfo);
         this.playerID = playerID;
     }
@@ -99,30 +112,43 @@ public class GameView extends SurfaceView implements
         }
     }
 
+    public void StartVibrator() {
+        StartVibrator(300);
+    }
+
+    public void StartVibrator(int ms) {
+        if (effVibrator) {
+            vibrator.vibrate(ms);
+        }
+    }
+
     public void StartBGM() {
-        String filename = "sound/bgm/" + map.BGM;
-        AssetFileDescriptor afd = Common.getAssetsFileDescripter(filename);
-        try {
-            gamebackgroundsound.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (BGM) {
+            String filename = "sound/bgm/" + map.BGM;
+            AssetFileDescriptor afd = Common.getAssetsFileDescripter(filename);
+            try {
+                gamebackgroundsound.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                gamebackgroundsound.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            gamebackgroundsound.setVolume(0.1f, 0.1f);
+            gamebackgroundsound.setLooping(true);
+            gamebackgroundsound.start();
+
         }
-        try {
-            gamebackgroundsound.prepare();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        gamebackgroundsound.setVolume(0.1f, 0.1f);
-        gamebackgroundsound.setLooping(true);
-        gamebackgroundsound.start();
-        isGameStart=true;
+        isGameStart = true;
     }
 
     public void GameEndSignal() {
-        if(!BT_MODE) {
+        if (!BT_MODE) {
             Intent intent = new Intent("Result");
             context.sendBroadcast(intent);
-        }else{
+        } else {
             String add = "EndGame@1&";
             connectedThread.write(add.getBytes());
         }
@@ -140,7 +166,7 @@ public class GameView extends SurfaceView implements
         for (int x = 0; x < Common.MAP_WIDTH_UNIT; x++) {
             for (int y = 0; y < Common.MAP_HEIGHT_UNIT; y++) {
                 Bitmap bitmap = map.imageCaches.get("grass.png");
-                if (bitmap != null)
+                if (bitmap != null) {
                     try {
                         canvas.drawBitmap(bitmap,
                                 (screenWidth * (x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
@@ -149,9 +175,66 @@ public class GameView extends SurfaceView implements
                     } catch (Exception e) {
                         e.getCause();
                     }
+                }
             }
         }
+        //這裡畫邊界的地方，為避免留黑所以畫上地圖，同時加上樹木
+        int diffX = (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2;
 
+        //左邊界
+        for (int x = 0; x < diffX; x++) {
+            for (int y = 0; y < Common.MAP_HEIGHT_UNIT; y++) {
+                Bitmap bitmap = map.imageCaches.get("grass.png");
+                if (bitmap != null) {
+                    try {
+                        canvas.drawBitmap(bitmap,
+                                (screenWidth * x) / Common.GAME_WIDTH_UNIT,
+                                (screenHeight * y) / Common.GAME_HEIGHT_UNIT,
+                                null);
+                    } catch (Exception e) {
+                        e.getCause();
+                    }
+                }
+                bitmap = map.imageCaches.get("tree1.png");
+                if (bitmap != null) {
+                    try {
+                        canvas.drawBitmap(bitmap,
+                                (screenWidth * x) / Common.GAME_WIDTH_UNIT,
+                                (screenHeight * y) / Common.GAME_HEIGHT_UNIT,
+                                null);
+                    } catch (Exception e) {
+                        e.getCause();
+                    }
+                }
+            }
+        }
+        //右邊界
+        for (int x = diffX + Common.MAP_WIDTH_UNIT; x < Common.GAME_WIDTH_UNIT; x++) {
+            for (int y = 0; y < Common.MAP_HEIGHT_UNIT; y++) {
+                Bitmap bitmap = map.imageCaches.get("grass.png");
+                if (bitmap != null) {
+                    try {
+                        canvas.drawBitmap(bitmap,
+                                (screenWidth * x) / Common.GAME_WIDTH_UNIT,
+                                (screenHeight * y) / Common.GAME_HEIGHT_UNIT,
+                                null);
+                    } catch (Exception e) {
+                        e.getCause();
+                    }
+                }
+                bitmap = map.imageCaches.get("tree1.png");
+                if (bitmap != null) {
+                    try {
+                        canvas.drawBitmap(bitmap,
+                                (screenWidth * x) / Common.GAME_WIDTH_UNIT,
+                                (screenHeight * y) / Common.GAME_HEIGHT_UNIT,
+                                null);
+                    } catch (Exception e) {
+                        e.getCause();
+                    }
+                }
+            }
+        }
         for (MapObject mapObject : map.bombs) {
             try {
                 mapObject.Draw(canvas);
@@ -202,33 +285,59 @@ public class GameView extends SurfaceView implements
             }
         }
 
-        if(controlMode==1){
-            if(isControlDirection){
-                double widthOffset=screenWidth / Common.GAME_WIDTH_UNIT;
-                double heightOffset=screenHeight / Common.GAME_HEIGHT_UNIT;
+        if (controlMode == 2) {
+            if (isControlDirection) {
+                double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
+                double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
                     Bitmap directionOut = map.imageCaches.get("direction_out.png");
                     alphaPaint.setAlpha(160);
                     canvas.drawBitmap(directionOut,
-                            (float)(touchInitX-widthOffset*2),
-                            (float)(touchInitY-heightOffset*2),
+                            (float) (touchInitX - widthOffset * 2),
+                            (float) (touchInitY - heightOffset * 2),
                             alphaPaint);
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
                     alphaPaint.setAlpha(70);
                     canvas.drawBitmap(directionIn,
-                            (float)(touchNowX-widthOffset*1),
-                            (float)(touchNowY-heightOffset*1),
+                            (float) (touchNowX - widthOffset * 1),
+                            (float) (touchNowY - heightOffset * 1),
                             alphaPaint);
                 } catch (Exception e) {
                     e.getCause();
                 }
             }
-        }else{
+        } else if (controlMode == 1) {
+            try {
+                Bitmap directionOut = map.imageCaches.get("direction_out.png");
+                alphaPaint.setAlpha(160);
+                canvas.drawBitmap(directionOut,
+                        (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
+                        (screenHeight * 7) / Common.GAME_HEIGHT_UNIT,
+                        alphaPaint);
+            } catch (Exception e) {
+                e.getCause();
+            }
+            if (isControlDirection) {
+                double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
+                double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
+                try {
+                    Bitmap directionIn = map.imageCaches.get("direction_in.png");
+                    alphaPaint.setAlpha(70);
+                    canvas.drawBitmap(directionIn,
+                            (float) (touchNowX - widthOffset * 1),
+                            (float) (touchNowY - heightOffset * 1),
+                            alphaPaint);
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
+        } else {
+            alphaPaint.setAlpha(160);
             try {
                 Bitmap direction = map.imageCaches.get("direction.png");
                 canvas.drawBitmap(direction,
                         (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
-                        (screenHeight * 2) / Common.GAME_HEIGHT_UNIT,
+                        (screenHeight * 5) / Common.GAME_HEIGHT_UNIT,
                         alphaPaint);
             } catch (Exception e) {
                 e.getCause();
@@ -254,16 +363,16 @@ public class GameView extends SurfaceView implements
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             paint.setStrokeWidth(3);
             paint.setTextSize(screenWidth / 30);
-            String str = context.getString(R.string.game_view_get_money)+getMoney;
+            String str = context.getString(R.string.game_view_get_money) + getMoney;
             paint.setColor(context.getResources().getColor(R.color.theme_color_font));
             paint.setTextAlign(Paint.Align.CENTER);
-            if(isWin) {
+            if (isWin) {
                 canvas.drawText(str, screenWidth / 2, screenHeight * 3 / 4, paint);
-            }else{
+            } else {
                 canvas.drawText(str, screenWidth / 2, screenHeight * 5 / 6, paint);
             }
-            if(gameEndFrameCounter>5000/Common.GAME_REFRESH){
-                gameThread.stop=true;
+            if (gameEndFrameCounter > 5000 / Common.GAME_REFRESH) {
+                gameThread.stop = true;
                 GameEndSignal();
             }
         }
@@ -396,22 +505,20 @@ public class GameView extends SurfaceView implements
     }
 
     public void SaveData() {
-        String file="money.bl2";
-        Recorder recorder=new Recorder(context);
-        String moneyRecord=recorder.Read(file);
-        int money=0;
-        if(moneyRecord!=null){
-            money+=Integer.parseInt(moneyRecord)+getMoney;
+        String file = "money.bl2";
+        Recorder recorder = new Recorder(context);
+        String moneyRecord = recorder.Read(file);
+        int money = 0;
+        if (moneyRecord != null) {
+            money += Integer.parseInt(moneyRecord) + getMoney;
         }
-        if(BT_MODE){
-            if(isWin)
-            {
-                money+=500;
+        if (BT_MODE) {
+            if (isWin) {
+                money += 500;
             }
-        }else{
-            if(isWin)
-            {
-                money+=200*aiCount;
+        } else {
+            if (isWin) {
+                money += 200 * aiCount;
             }
         }
         recorder.Write(String.valueOf(money), file);
@@ -493,7 +600,7 @@ public class GameView extends SurfaceView implements
                 ai.Move();
                 ai.CheckBubble();
                 ai.CheckItem();
-                if(ai.IsDead){
+                if (ai.IsDead) {
                     continue;
                 }
                 ai.CheckDead();
@@ -502,15 +609,15 @@ public class GameView extends SurfaceView implements
         for (MapObject mapObject : map.centerObjects) {
             mapObject.Play();
         }
-        for(MapObject mapObject:map.mapFlyingObjects){
+        for (MapObject mapObject : map.mapFlyingObjects) {
             mapObject.Play();
-            if(mapObject.totalTime>Common.GAME_REFRESH*25 && !mapObject.IsEnd){
-                MapObject obj=new MapObject(mapObject.location.x,mapObject.location.y,mapObject.type,mapObject.id,mapObject.map);
+            if (mapObject.totalTime > Common.GAME_REFRESH * 25 && !mapObject.IsEnd) {
+                MapObject obj = new MapObject(mapObject.location.x, mapObject.location.y, mapObject.type, mapObject.id, mapObject.map);
                 map.mapObjects.add(obj);
-                mapObject.IsEnd=true;
+                mapObject.IsEnd = true;
             }
         }
-        for(MapObject mapObject:map.mapFlyingObjects){
+        for (MapObject mapObject : map.mapFlyingObjects) {
             try {
                 if (mapObject.IsEnd) {
                     map.mapFlyingObjects.remove(mapObject);
@@ -593,7 +700,7 @@ public class GameView extends SurfaceView implements
     public void PlayerMove(int direction, String id) {
         for (Player player : map.players) {
             if (player.uid.equals(id)) {
-                if(player.mountDeadCounter>0){
+                if (player.mountDeadCounter > 0) {
                     continue;
                 }
                 player.IsMoving = true;
@@ -623,7 +730,7 @@ public class GameView extends SurfaceView implements
     //Touch Event
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(isGameEnd||!isGameStart){
+        if (isGameEnd || !isGameStart) {
             return true;
         }
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -632,40 +739,40 @@ public class GameView extends SurfaceView implements
                     if (player.uid.equals(playerID)) {
                         player.IsMoving = false;
                         player.speed_now = 0;
-                        isControlDirection=false;
+                        isControlDirection = false;
                     }
                 }
                 break;
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
-                Touch(event.getX(0), event.getY(0),true);
+                Touch(event.getX(0), event.getY(0), true);
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                Touch(event.getX(1), event.getY(1),false);
-            break;
+                Touch(event.getX(1), event.getY(1), false);
+                break;
         }
         return true;
     }
 
-    public void Touch(double x, double y,boolean Single) {
+    public void Touch(double x, double y, boolean Single) {
         if (x > screenWidth / 2) {
             for (Player player : map.players) {
                 if (player.uid.equals(playerID)) {
                     player.AddBomb();
                 }
             }
-            if(Single&&controlMode==1){
-                isControlDirection=false;
+            if (Single && controlMode != 0) {
+                isControlDirection = false;
                 for (Player player : map.players) {
                     if (player.uid.equals(playerID)) {
                         player.IsMoving = false;
                         player.speed_now = 0;
-                        isControlDirection=false;
+                        isControlDirection = false;
                     }
                 }
             }
         } else {
-            if(controlMode==1) {
+            if (controlMode == 2) {
                 if (isControlDirection) {
                     touchNowX = x;
                     touchNowY = y;
@@ -707,11 +814,52 @@ public class GameView extends SurfaceView implements
                     touchNowX = x;
                     touchNowY = y;
                 }
-            }else{
+            } else if (controlMode == 1) {
+                isControlDirection=true;
+                touchInitX=(screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT;
+                touchInitY=(screenHeight * 7) / Common.GAME_HEIGHT_UNIT;
+                double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
+                double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
+                touchInitX+=widthOffset*2;
+                touchInitY+=heightOffset*2;
+                touchNowX = x;
+                touchNowY = y;
+                double touchX = x - touchInitX;
+                double touchY = y - touchInitY;
+                if (touchX > 0) {
+                    if (touchY > 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_RIGHT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_DOWN, playerID);
+                        }
+                    } else if (touchY < 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_RIGHT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_TOP, playerID);
+                        }
+                    }
+                } else if (touchX < 0) {
+                    if (touchY > 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_LEFT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_DOWN, playerID);
+                        }
+                    } else if (touchY < 0) {
+                        if (Math.abs(touchX) > Math.abs(touchY)) {
+                            PlayerMove(Location.LOCATION_LEFT, playerID);
+                        } else {
+                            PlayerMove(Location.LOCATION_TOP, playerID);
+                        }
+                    }
+                }
+            } else {
                 int controlW = 6 * screenWidth / Common.GAME_WIDTH_UNIT;
                 int controlH = 6 * screenHeight / Common.GAME_HEIGHT_UNIT;
                 x -= screenWidth / Common.GAME_WIDTH_UNIT;
-                y -= 2 * screenHeight / Common.GAME_HEIGHT_UNIT;
+                y -= 5 * screenHeight / Common.GAME_HEIGHT_UNIT;
                 int centerX = controlW / 2, centerY = controlH / 2;
                 int touchX = (int) x - centerX;
                 int touchY = (int) y - centerY;

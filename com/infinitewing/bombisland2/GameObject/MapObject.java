@@ -163,6 +163,7 @@ public class MapObject {
             }
         }
         if(!Common.gameView.hadPlayExplosion) {
+            Common.gameView.StartVibrator();
             Common.gameView.soundManager.addSound("explosion.mp3");
             Common.gameView.hadPlayExplosion=true;
         }

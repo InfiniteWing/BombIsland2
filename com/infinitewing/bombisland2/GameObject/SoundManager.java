@@ -26,6 +26,8 @@ public class SoundManager {
     }
 
     public void addSound(String AssetFilePath) {
+        if(!Common.gameView.effSound)
+            return;
         AssetFileDescriptor soundAFD = Common.getAssetsFileDescripter("sound/"+AssetFilePath);
         if(soundAFD==null)
             return;

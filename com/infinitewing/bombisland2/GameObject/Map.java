@@ -159,6 +159,16 @@ public class Map {
         source = Bitmap.createBitmap(source, 0, 0,
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("bubble01.png", source);
+
+        source = Common.getBitmapFromAsset("map/tree1.png");
+        matrix = new Matrix();
+        matrix.reset();
+        width = 1 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 1 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("tree1.png", source);
     }
 
     public void InitMapGrass(String grassID) {
