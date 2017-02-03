@@ -30,14 +30,14 @@ public class Animation {
         if(img==null){
             try {
                 img = Bitmap.createBitmap(source,
-                        (source_x + (step - 1)) * (source_width / source_width_unit),
-                        source_y * (source_height / source_height_unit),
-                        width_unit * (source_width / source_width_unit),
-                        height_unit * (source_height / source_height_unit));
+                        (source_x + (step - 1)) * source_width / source_width_unit,
+                        source_y * source_height / source_height_unit,
+                        width_unit * source_width / source_width_unit,
+                        height_unit * source_height / source_height_unit);
             }catch (Exception e){
                 img=Bitmap.createBitmap(source,
-                        (source_x + (step - 1)) * (source_width / source_width_unit),
-                        source_y * (source_height / source_height_unit),
+                        (source_x + (step - 1)) * source_width / source_width_unit,
+                        source_y * source_height / source_height_unit,
                         source_width,
                         source_height);
             }

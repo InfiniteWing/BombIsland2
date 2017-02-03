@@ -3,6 +3,7 @@ package com.infinitewing.bombisland2.GameObject;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 
 import com.infinitewing.bombisland2.GameObject.Parser.MapObjectParser;
 
@@ -18,10 +19,10 @@ public class MapObject {
     public static final int TYPE_OTHER = 1, TYPE_ITEM = 2,
             TYPE_DESTROYABLE = 3, TYPE_DESTROYABLE_MOVABLE = 4,
             TYPE_BOMB = 5, TYPE_CENTER_OBJ = 6;
-    public Location location,startLocation;
+    public Location location, startLocation;
     public Animation animation;
     public int type;
-    public int totalTime=0;
+    public int totalTime = 0;
     public int power;
     public int addPower, addWaterBall, addSpeed, addMoney, itemInvincible;
     public int randNum;
@@ -40,7 +41,7 @@ public class MapObject {
         this.type = type;
         this.map = map;
         this.id = id;
-        mountID=null;
+        mountID = null;
         addMoney = 0;
         addWaterBall = 0;
         addPower = 0;
@@ -59,19 +60,19 @@ public class MapObject {
         if (type == MapObject.TYPE_CENTER_OBJ) {
             centerObstacles = new Vector<>();
         }
-        if(type==MapObject.TYPE_ITEM){
+        if (type == MapObject.TYPE_ITEM) {
             itemInvincible = 4;
         }
         Parse();
     }
-    public void SetExplosionItem(){
+
+    public void SetExplosionItem() {
         if (type == MapObject.TYPE_DESTROYABLE || type == MapObject.TYPE_DESTROYABLE_MOVABLE) {
             if (randNum < 200) {
                 item = new MapObject(location.x, location.y, MapObject.TYPE_ITEM, "item_bomb", map);
             } else if (randNum < 400) {
                 item = new MapObject(location.x, location.y, MapObject.TYPE_ITEM, "item_power", map);
-            }
-            else if (randNum < 600) {
+            } else if (randNum < 600) {
                 item = new MapObject(location.x, location.y, MapObject.TYPE_ITEM, "item_speed", map);
             } else if (randNum < 635) {
                 item = new MapObject(location.x, location.y, MapObject.TYPE_ITEM, "item_max", map);
@@ -92,6 +93,7 @@ public class MapObject {
             }
         }
     }
+
     public void Parse() {
         if (type == MapObject.TYPE_ITEM) {
             MapObject cache = map.itemCaches.get(id);
@@ -117,7 +119,7 @@ public class MapObject {
                 animation.loop_step = cache.animation.loop_step;
                 animation.loop_total = cache.animation.loop_total;
                 animation.source = map.imageCaches.get(imgName);
-                mountID=cache.mountID;
+                mountID = cache.mountID;
                 animation.Init();
                 return;
             }
@@ -127,22 +129,22 @@ public class MapObject {
     }
 
     public void Draw(Canvas canvas) {
-        if(!IsEnd) {
-            if(startLocation!=null){//flyingObject
-                int offsetX=Math.abs(location.x-startLocation.x);
-                int offsetY=Math.abs(location.y-startLocation.y);
-                float timeRate=((float)(totalTime/Common.GAME_REFRESH)/25);
-                float nowX=startLocation.x>location.x
-                        ?startLocation.x-offsetX*timeRate:startLocation.x+offsetX*timeRate;
-                float nowY=startLocation.y>location.y
-                        ?startLocation.y-offsetY*timeRate:startLocation.y+offsetY*timeRate;
+        if (!IsEnd) {
+            if (startLocation != null) {//flyingObject
+                int offsetX = Math.abs(location.x - startLocation.x);
+                int offsetY = Math.abs(location.y - startLocation.y);
+                float timeRate = ((float) (totalTime / Common.GAME_REFRESH) / 25);
+                float nowX = startLocation.x > location.x
+                        ? startLocation.x - offsetX * timeRate : startLocation.x + offsetX * timeRate;
+                float nowY = startLocation.y > location.y
+                        ? startLocation.y - offsetY * timeRate : startLocation.y + offsetY * timeRate;
                 float x = (nowX + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2) + animation.offset_width_unit;
                 float y = nowY + animation.offset_height_unit;
                 canvas.drawBitmap(animation.img,
                         (Common.gameView.screenWidth * x) / Common.GAME_WIDTH_UNIT,
                         (Common.gameView.screenHeight * y) / Common.GAME_HEIGHT_UNIT,
                         null);
-            }else {
+            } else {
                 int x = (location.x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2) + animation.offset_width_unit;
                 int y = location.y + animation.offset_height_unit;
                 canvas.drawBitmap(animation.img,
@@ -151,6 +153,21 @@ public class MapObject {
                         null);
             }
         }
+    }
+
+    public void Draw(int x, int y, Canvas canvas) {
+        int tmp_x = x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
+        int tmp_y = y;
+        tmp_x *= Common.gameView.screenWidth;
+        tmp_y *= Common.gameView.screenHeight;
+        tmp_x /= Common.PLAYER_POSITION_RATE;
+        tmp_y /= Common.PLAYER_POSITION_RATE;
+        Paint alphaPaint = new Paint();
+
+        canvas.drawBitmap(animation.img,
+                tmp_x / Common.GAME_WIDTH_UNIT,
+                tmp_y / Common.GAME_HEIGHT_UNIT,
+                alphaPaint);
     }
 
     public void BombExplosion() {
@@ -162,28 +179,28 @@ public class MapObject {
                 player.wb = player.wb_max;
             }
         }
-        if(!Common.gameView.hadPlayExplosion) {
+        if (!Common.gameView.hadPlayExplosion) {
             Common.gameView.StartVibrator();
             Common.gameView.soundManager.addSound("explosion.mp3");
-            Common.gameView.hadPlayExplosion=true;
+            Common.gameView.hadPlayExplosion = true;
         }
         Explosion e = new Explosion(new Location(location.x, location.y));
         e.delay = 0;
         map.explosions.add(e);
 
         for (int x = location.x; x >= 0 && x >= location.x - power; x--) {
-            boolean HadBomb=false;
+            boolean HadBomb = false;
             if (x == location.x) {
                 continue;
             }
-            MapObject mapObject=map.GetBomb(x,location.y);
-            if(mapObject!=null) {
+            MapObject mapObject = map.GetBomb(x, location.y);
+            if (mapObject != null) {
                 if (!mapObject.IsEnd) {
                     mapObject.BombExplosion();
-                    HadBomb=true;
+                    HadBomb = true;
                 }
             }
-            if(!HadBomb){
+            if (!HadBomb) {
                 if (map.mapObstacles[x][location.y] == 2) {
                     Explosion explosion = new Explosion(new Location(x, location.y));
                     explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
@@ -199,18 +216,18 @@ public class MapObject {
 
         }
         for (int x = location.x; x < Common.MAP_WIDTH_UNIT && x <= location.x + power; x++) {
-            boolean HadBomb=false;
+            boolean HadBomb = false;
             if (x == location.x) {
                 continue;
             }
-            MapObject mapObject=map.GetBomb(x,location.y);
-            if(mapObject!=null) {
+            MapObject mapObject = map.GetBomb(x, location.y);
+            if (mapObject != null) {
                 if (!mapObject.IsEnd) {
                     mapObject.BombExplosion();
-                    HadBomb=true;
+                    HadBomb = true;
                 }
             }
-            if(!HadBomb) {
+            if (!HadBomb) {
                 if (map.mapObstacles[x][location.y] == 2) {
                     Explosion explosion = new Explosion(new Location(x, location.y));
                     explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
@@ -226,19 +243,19 @@ public class MapObject {
         }
 
         for (int y = location.y; y < Common.MAP_HEIGHT_UNIT && y <= location.y + power; y++) {
-            boolean HadBomb=false;
+            boolean HadBomb = false;
             if (y == location.y) {
                 continue;
             }
 
-            MapObject mapObject=map.GetBomb(location.x, y);
-            if(mapObject!=null) {
+            MapObject mapObject = map.GetBomb(location.x, y);
+            if (mapObject != null) {
                 if (!mapObject.IsEnd) {
                     mapObject.BombExplosion();
-                    HadBomb=true;
+                    HadBomb = true;
                 }
             }
-            if(!HadBomb) {
+            if (!HadBomb) {
                 if (map.mapObstacles[location.x][y] == 2) {
                     Explosion explosion = new Explosion(new Location(location.x, y));
                     explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
@@ -253,18 +270,18 @@ public class MapObject {
             }
         }
         for (int y = location.y; y >= 0 && y >= location.y - power; y--) {
-            boolean HadBomb=false;
+            boolean HadBomb = false;
             if (y == location.y) {
                 continue;
             }
-            MapObject mapObject=map.GetBomb(location.x, y);
-            if(mapObject!=null) {
+            MapObject mapObject = map.GetBomb(location.x, y);
+            if (mapObject != null) {
                 if (!mapObject.IsEnd) {
                     mapObject.BombExplosion();
-                    HadBomb=true;
+                    HadBomb = true;
                 }
             }
-            if(!HadBomb) {
+            if (!HadBomb) {
                 if (map.mapObstacles[location.x][y] == 2) {
                     Explosion explosion = new Explosion(new Location(location.x, y));
                     explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
@@ -281,15 +298,15 @@ public class MapObject {
     }
 
     public void Play() {
-        totalTime+=Common.GAME_REFRESH;
-        if(!IsEnd) {
+        totalTime += Common.GAME_REFRESH;
+        if (!IsEnd) {
             itemInvincible--;
             animation.Play();
             if (animation.IsEnd() && !animation.loop) {
                 if (type == TYPE_BOMB) {
                     try {
                         BombExplosion();
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         e.getCause();
                     }
                 }
@@ -316,7 +333,7 @@ public class MapObject {
                         }
                     }
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.getCause();
             }
         }

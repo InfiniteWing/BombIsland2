@@ -10,12 +10,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
@@ -253,6 +256,8 @@ public class Bluetooth extends Activity {
             findViewById(R.id.GameVersusPlayer_IV).setOnClickListener(new ClickListener());
         } else {
             findViewById(R.id.GameVersusPlayer_PlayerIV2).setOnClickListener(new ClickListener());
+            findViewById(R.id.GameVersusPlayer_ChooseMapTV).setVisibility(View.GONE);
+            findViewById(R.id.GameVersusPlayer_Submit).setVisibility(View.GONE);
         }
     }
 
@@ -270,6 +275,8 @@ public class Bluetooth extends Activity {
                 ShowMap();
             } else {
                 findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
+                findViewById(R.id.GameVersusPlayer_ChooseMapTV).setVisibility(View.GONE);
+                findViewById(R.id.GameVersusPlayer_Submit).setVisibility(View.GONE);
                 LoadServerInitData();
             }
         } catch (Exception e) {
@@ -345,10 +352,7 @@ public class Bluetooth extends Activity {
             IsPlaying = true;
             gamebackgroundsound = new MediaPlayer();
             intent = this.getIntent();
-            DisplayMetrics dm = new DisplayMetrics();
-            this.getWindowManager().getDefaultDisplay().getMetrics(dm);
-            Common.SCREEN_WIDTH = dm.widthPixels;
-            Common.SCREEN_HEIGHT = dm.heightPixels;
+            setScreenSize(getApplicationContext());
             if (IsServer) {
                 gameView = new GameView(this, player1.id, player2.id, true, true, map.id, 1, gamebackgroundsound);
             } else {
@@ -358,18 +362,46 @@ public class Bluetooth extends Activity {
             setContentView(gameView);
             gamelistener = new GameListener();
             IntentFilter filter = new IntentFilter();
-            filter.addAction("Result");
-            //registerReceiver(gamelistener, filter);
+            filter.addAction("Destroy");
+            registerReceiver(gamelistener, filter);
         } catch (Exception e) {
             e.getCause();
         }
     }
 
+    public void setScreenSize(Context context) {
+        int x, y, orientation = context.getResources().getConfiguration().orientation;
+        WindowManager wm = ((WindowManager)
+                context.getSystemService(Context.WINDOW_SERVICE));
+        Display display = wm.getDefaultDisplay();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            Point screenSize = new Point();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                display.getRealSize(screenSize);
+                x = screenSize.x;
+                y = screenSize.y;
+            } else {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+                    display.getSize(screenSize);
+                }
+                x = screenSize.x;
+                y = screenSize.y;
+            }
+        } else {
+            x = display.getWidth();
+            y = display.getHeight();
+        }
+
+        int width = x;
+        int height = y;
+        Common.SCREEN_WIDTH = width;
+        Common.SCREEN_HEIGHT = height;
+    }
+
     private class GameListener extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-
-            //Bluetooth.this.finish();
+            ErrorDestroy();
         }
     }
 
@@ -413,124 +445,130 @@ public class Bluetooth extends Activity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if (buffer[0] != 0) {
-                    String datas = new String(buffer).split("\0")[0];
-                    if (datas.lastIndexOf("&") > 0) {
-                        datas = datas.substring(0, datas.lastIndexOf("&"));
-                    }
-                    if (datas.length() > 0) {
-                        for (String data : datas.split("&")) {
-                            String[] dataFrame = data.split("@");
-                            if (dataFrame[0] != null && dataFrame[0].length() > 0) {
-                                if (dataFrame[0].equals("PlayerInfo")) {
-                                    data = dataFrame[1];
-                                    String[] playersInfo = data.split(";");
-                                    for (String info : playersInfo) {
-                                        String[] infoDetail = info.split(",");
-                                        Player player;
-                                        player = new Player(infoDetail[0].substring(0, infoDetail[0].length() - 2),
-                                                Integer.parseInt(infoDetail[1]),
-                                                Integer.parseInt(infoDetail[2]), gameView.map);
-                                        player.uid = infoDetail[0];
-                                        gameView.map.players.add(player);
-                                    }
-                                } else if (dataFrame[0].equals("PlayerMapInfo")) {
-                                    data = dataFrame[1];
-                                    String[] mapInfo = data.split(",");
-                                    int i = 0;
-                                    for (String info : mapInfo) {
-                                        gameView.map.mapObjects.elementAt(i).randNum = Integer.parseInt(info);
-                                        gameView.map.mapObjects.elementAt(i).item = null;
-                                        gameView.map.mapObjects.elementAt(i).SetExplosionItem();
-                                        i++;
-                                    }
-                                    String data2 = "PlayerHadInitBT@";
-                                    data2 += "&";
-                                    byte[] data3 = data2.getBytes();
-                                    gameView.hadInitPlayer = true;
-                                    gameView.hadInitBT = true;
-                                    this.write(data3);
-                                } else if (dataFrame[0].equals("PlayerFrameEnd")) {
-                                    gameView.FrameBalancer--;
-                                } else if (dataFrame[0].equals("PlayerHadInitBT")) {
-                                    gameView.hadInitBT = true;
-                                } else if (dataFrame[0].equals("BTPlayerMove")) {
-                                    data = dataFrame[1];
-                                    String id = data.split(",")[0];
-                                    int x = Integer.parseInt(data.split(",")[1]);
-                                    int y = Integer.parseInt(data.split(",")[2]);
-                                    int d = Integer.parseInt(data.split(",")[3]);
-                                    int s = Integer.parseInt(data.split(",")[4]);
-                                    gameView.BTPlayerMoveTo(id, x, y, d, s);
-                                } else if (dataFrame[0].equals("BTPlayerAddBomb")) {
-                                    data = dataFrame[1];
-                                    String id = data.split(",")[0];
-                                    int x = Integer.parseInt(data.split(",")[1]);
-                                    int y = Integer.parseInt(data.split(",")[2]);
-                                    gameView.BTPlayerAddBombTo(id, x, y);
-                                } else if (dataFrame[0].equals("ChangeHero")) {
-                                    String id = dataFrame[1];
-                                    if (IsServer) {
-                                        player2 = new Player(id, getApplicationContext());
-                                        runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                ShowHero(1, true);//Client 端換了英雄
+                try {
+                    if (buffer[0] != 0) {
+                        String datas = new String(buffer).split("\0")[0];
+                        if (datas.lastIndexOf("&") > 0) {
+                            datas = datas.substring(0, datas.lastIndexOf("&"));
+                        }
+                        if (datas.length() > 0) {
+                            for (String data : datas.split("&")) {
+                                String[] dataFrame = data.split("@");
+                                if (dataFrame[0] != null && dataFrame[0].length() > 0) {
+                                    if (dataFrame[0].equals("PlayerInfo")) {
+                                        data = dataFrame[1];
+                                        String[] playersInfo = data.split(";");
+                                        for (String info : playersInfo) {
+                                            String[] infoDetail = info.split(",");
+                                            Player player;
+                                            player = new Player(infoDetail[0].substring(0, infoDetail[0].length() - 2),
+                                                    Integer.parseInt(infoDetail[1]),
+                                                    Integer.parseInt(infoDetail[2]), gameView.map);
+                                            player.uid = infoDetail[0];
+                                            if (player.uid.equals(gameView.playerID)) {
+                                                player.InitEmotion("emotion_player");
+                                                player.teamID = 2;
+                                            } else {
+                                                player.InitEmotion("emotion_ai");
+                                                player.teamID = 1;
                                             }
-                                        });
-                                    } else {
-                                        player1 = new Player(id, getApplicationContext());
-                                        runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                ShowHero(0, true);//Server 端換了英雄
-                                            }
-                                        });
-                                    }
-                                } else if (dataFrame[0].equals("ChangeMap")) {
-                                    final String id = dataFrame[1];
-                                    runOnUiThread(new Runnable() {
-                                        public void run() {
-                                            map = new Map(id, getApplicationContext());//Server 端換了地圖
-                                            ShowMap();
+                                            gameView.map.players.add(player);
                                         }
-                                    });
-                                } else if (dataFrame[0].equals("LoadServerInitData")) {
-                                    runOnUiThread(new Runnable() {
-                                        public void run() {
-                                            ShowMap();
-                                            ShowHero(0, false);
+                                    } else if (dataFrame[0].equals("PlayerMapInfo")) {
+                                        data = dataFrame[1];
+                                        String[] mapInfo = data.split(",");
+                                        int i = 0;
+                                        for (String info : mapInfo) {
+                                            gameView.map.mapObjects.elementAt(i).randNum = Integer.parseInt(info);
+                                            gameView.map.mapObjects.elementAt(i).item = null;
+                                            gameView.map.mapObjects.elementAt(i).SetExplosionItem();
+                                            i++;
                                         }
-                                    });
-                                } else if (dataFrame[0].equals("StartGame")) {
-                                    runOnUiThread(new Runnable() {
-                                        public void run() {
-                                            StartGame();
+                                        String data2 = "PlayerHadInitBT@1";
+                                        data2 += "&";
+                                        byte[] data3 = data2.getBytes();
+                                        gameView.hadInitPlayer = true;
+                                        gameView.hadInitBT = true;
+                                        this.write(data3);
+                                    } else if (dataFrame[0].equals("PlayerFrameEnd")) {
+                                        data = dataFrame[1];
+                                        gameView.BTgameTime = Integer.parseInt(data);
+                                    } else if (dataFrame[0].equals("PlayerHadInitBT")) {
+                                        gameView.hadInitBT = true;
+                                    } else if (dataFrame[0].equals("BTPlayerMove")) {
+                                        data = dataFrame[1];
+                                        String id = data.split(",")[0];
+                                        int x = Integer.parseInt(data.split(",")[1]);
+                                        int y = Integer.parseInt(data.split(",")[2]);
+                                        int d = Integer.parseInt(data.split(",")[3]);
+                                        int s = Integer.parseInt(data.split(",")[4]);
+                                        gameView.BTPlayerMoveTo(id, x, y, d, s);
+                                    } else if (dataFrame[0].equals("BTPlayerAddBomb")) {
+                                        data = dataFrame[1];
+                                        String id = data.split(",")[0];
+                                        int x = Integer.parseInt(data.split(",")[1]);
+                                        int y = Integer.parseInt(data.split(",")[2]);
+                                        int time = Integer.parseInt(data.split(",")[3]);
+                                        gameView.BTPlayerAddBombTo(id, x, y, time);
+                                    } else if (dataFrame[0].equals("ChangeHero")) {
+                                        String id = dataFrame[1];
+                                        if (IsServer) {
+                                            player2 = new Player(id, getApplicationContext());
+                                            runOnUiThread(new Runnable() {
+                                                public void run() {
+                                                    ShowHero(1, true);//Client 端換了英雄
+                                                }
+                                            });
+                                        } else {
+                                            player1 = new Player(id, getApplicationContext());
+                                            runOnUiThread(new Runnable() {
+                                                public void run() {
+                                                    ShowHero(0, true);//Server 端換了英雄
+                                                }
+                                            });
                                         }
-                                    });
-                                } else if (dataFrame[0].equals("EndGame")) {
-                                    if (IsPlaying) {
-                                        IsPlaying = false;
-                                        IsStarting = false;
+                                    } else if (dataFrame[0].equals("ChangeMap")) {
+                                        final String id = dataFrame[1];
                                         runOnUiThread(new Runnable() {
                                             public void run() {
-                                                ReStartNewGame();
+                                                map = new Map(id, getApplicationContext());//Server 端換了地圖
+                                                ShowMap();
                                             }
                                         });
-                                    }
-                                } else if (dataFrame[0].equals("FinishGame")) {
-                                    if (!IsFinishing) {
-                                        IsFinishing = true;
+                                    } else if (dataFrame[0].equals("LoadServerInitData")) {
                                         runOnUiThread(new Runnable() {
                                             public void run() {
-                                                Toast.makeText(getApplicationContext(), R.string.game_versus_player_error, Toast.LENGTH_SHORT).show();
-                                                FinishGame();
-                                                Bluetooth.this.finish();
+                                                ShowMap();
+                                                ShowHero(0, false);
                                             }
                                         });
+                                    } else if (dataFrame[0].equals("StartGame")) {
+                                        runOnUiThread(new Runnable() {
+                                            public void run() {
+                                                StartGame();
+                                            }
+                                        });
+                                    } else if (dataFrame[0].equals("EndGame")) {
+                                        if (IsPlaying) {
+                                            IsPlaying = false;
+                                            IsStarting = false;
+                                            String add = "EndGame@1&";
+                                            connectedThread.write(add.getBytes());
+                                            runOnUiThread(new Runnable() {
+                                                public void run() {
+                                                    ReStartNewGame();
+                                                }
+                                            });
+                                        }
+                                    } else if (dataFrame[0].equals("FinishGame")) {
+                                        ErrorDestroy();
                                     }
                                 }
                             }
                         }
                     }
+                }catch (Exception e){
+                    e.getCause();
                 }
             }
         }
@@ -568,7 +606,18 @@ public class Bluetooth extends Activity {
             connectedThread.cancel();
         }
     }
-
+    public void ErrorDestroy(){
+        if (!IsFinishing) {
+            IsFinishing = true;
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(getApplicationContext(), R.string.game_versus_player_disconnect, Toast.LENGTH_SHORT).show();
+                    FinishGame();
+                    Bluetooth.this.finish();
+                }
+            });
+        }
+    }
     public class ClickListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
@@ -627,7 +676,16 @@ public class Bluetooth extends Activity {
             }
         }
     }
-
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if(IsPlaying){
+            if(gameView!=null) {
+                gameView.BTErrorDestroySignal();
+            }
+        }
+        FinishGame();
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         gamebackgroundsound.start();

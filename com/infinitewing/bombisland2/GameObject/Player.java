@@ -26,6 +26,7 @@ public class Player {
     public int price,mountDeadCounter;
     public Vector<String> eatItems;
     public Explosion deadExplosion;
+    public MapObject emotion;
     public Player(String id,Context context){
         this.id = id;
         character = new Character(this);
@@ -48,6 +49,9 @@ public class Player {
         eatItems=new Vector<>();
         Parse();
     }
+    public void InitEmotion(String id){
+        emotion=new MapObject(1,1,MapObject.TYPE_OTHER,id,map);
+    }
 
     public void ParseInfo(Context context){
         HeroParser heroParser=new HeroParser(this);
@@ -67,6 +71,13 @@ public class Player {
             }else{
                 character.Draw(canvas);
                 mount.character.Draw(canvas);
+            }
+        }
+    }
+    public void DrawEmotion(Canvas canvas){
+        if(!IsDead) {
+            if (emotion != null) {
+                emotion.Draw(player_x, player_y - 800, canvas);
             }
         }
     }
@@ -95,10 +106,14 @@ public class Player {
             }
         }
     }
-    public void AddBombBT(int x, int y) {
+    public void AddBombBT(int x, int y,int timeOffset) {
         MapObject bomb = new MapObject(x, y, MapObject.TYPE_BOMB, "bomb1", map);
         bomb.power = wb_power;
         bomb.player = this;
+        while(timeOffset>0){
+            bomb.Play();
+            timeOffset--;
+        }
         map.bombs.add(bomb);
         Common.gameView.soundManager.addSound("setbomb.mp3");
         map.mapObstacles[x][y] = 3;
@@ -171,11 +186,18 @@ public class Player {
         return intro;
     }
     public void BTMove() {
+        if(emotion!=null){
+            emotion.Play();
+        }
         character.Move();
         if(--mountDeadCounter > 0){
             if(mount!=null){
                 mount.mountDeadCounter--;
             }
+        }
+        if(IsBubbled){
+            bubbledTime+=Common.GAME_REFRESH;
+            return;
         }
         if(mountDeadCounter==0){
             mount=null;
@@ -192,10 +214,7 @@ public class Player {
         }
         if(IsBubbled){
             if(bubbledTime>Common.GAME_REFRESH*100){
-                IsDead=true;
-                Common.gameView.soundManager.addSound(deadSound);
-                Common.gameView.StartVibrator();
-                ExplodeItems();
+                PlayDead();
             }
             return;
         }
@@ -291,7 +310,7 @@ public class Player {
             return;
         }
         for (Ai ai: map.ais) {
-            if(ai.IsBubbled){
+            if(ai.IsBubbled&&!ai.IsDead){
                 if(ai.bubbledTime<=40){
                     continue;
                 }
@@ -324,6 +343,9 @@ public class Player {
         }
     }
     public void Move() {
+        if(emotion!=null){
+            emotion.Play();
+        }
         if(--mountDeadCounter>0){
             if(mount!=null){
                 mount.mountDeadCounter--;

@@ -170,7 +170,6 @@ public class Map {
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("tree1.png", source);
     }
-
     public void InitMapGrass(String grassID) {
         Bitmap source = Common.getBitmapFromAsset("map/" + grassID);
         Matrix matrix = new Matrix();
@@ -430,6 +429,16 @@ public class Map {
         Ai ai;
         player = new Player(playerID1, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
         player.uid = playerUID;
+        player.teamID=1;
+        if(BT_MODE) {
+            if (IS_SERVER)
+                player.InitEmotion("emotion_player");
+            else
+                player.InitEmotion("emotion_ai");
+        }else{
+            player.InitEmotion("emotion_player");
+        }
+
         players.add(player);
         randomNumLimit.add(randomNum);
         if (BT_MODE) {
@@ -441,6 +450,11 @@ public class Map {
             }
             player = new Player(playerID2, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
             player.uid = player.id + "_2";
+            player.teamID=2;
+            if(IS_SERVER)
+                player.InitEmotion("emotion_ai");
+            else
+                player.InitEmotion("emotion_player");
             players.add(player);
         } else {
             if (aiCount > startLocations.size() - 1) {
@@ -455,6 +469,7 @@ public class Map {
                     }
                 }
                 ai = new Ai(aiInfos.elementAt(aiIndex++), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, Ai.IQ_10);
+                ai.InitEmotion("emotion_ai");
                 ais.add(ai);
                 randomNumLimit.add(randomNum);
                 aiCount--;

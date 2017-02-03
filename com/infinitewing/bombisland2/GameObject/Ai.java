@@ -291,6 +291,9 @@ public class Ai extends Player {
         }
         SetMountMove();
         //這裡是Player.Move()的Copy版
+        if(emotion!=null){
+            emotion.Play();
+        }
         if (IsMoving && !IsDead) {
             speed_now += 10;
             if (mount != null) {

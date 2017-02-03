@@ -52,7 +52,7 @@ public class GameView extends SurfaceView implements
     public int screenWidth, screenHeight;
     public SoundManager soundManager;
     public Bluetooth.ConnectedThread connectedThread;
-    public int gameTime = 0, getMoney = 0, aiCount = 0;
+    public int gameTime = 0, BTgameTime = 0, getMoney = 0, aiCount = 0;
     public int FrameBalancer = 0, gameEndFrameCounter = 0;
     public boolean hadInitPlayer = false, hadInitBT = false, isGameStart = false, isGameEnd = false, isWin = false;
     public boolean hadSave = false, hadSaveGameEnd = false, hadPlayExplosion = false;
@@ -69,12 +69,14 @@ public class GameView extends SurfaceView implements
         super(context);
         this.context = context;
         Common.SetGameView(this);
+
         vibrator = (Vibrator) context.getSystemService(Service.VIBRATOR_SERVICE);
         sp = context.getSharedPreferences(Common.APP_NAME, context.MODE_PRIVATE);
         BGM = sp.getBoolean("BGM", true);
         effSound = sp.getBoolean("effSound", true);
         effVibrator = sp.getBoolean("effVibrator", true);
         controlMode = sp.getInt("controlMode", 0);
+
         this.getHolder().addCallback(this);
         this.gamebackgroundsound = gamebackgroundsound;
         screenWidth = Common.SCREEN_WIDTH;
@@ -94,6 +96,14 @@ public class GameView extends SurfaceView implements
         super(context);
         this.context = context;
         Common.SetGameView(this);
+
+        vibrator = (Vibrator) context.getSystemService(Service.VIBRATOR_SERVICE);
+        sp = context.getSharedPreferences(Common.APP_NAME, context.MODE_PRIVATE);
+        BGM = sp.getBoolean("BGM", true);
+        effSound = sp.getBoolean("effSound", true);
+        effVibrator = sp.getBoolean("effVibrator", true);
+        controlMode = sp.getInt("controlMode", 0);
+
         this.getHolder().addCallback(this);
         this.gamebackgroundsound = gamebackgroundsound;
         screenWidth = Common.SCREEN_WIDTH;
@@ -153,12 +163,15 @@ public class GameView extends SurfaceView implements
             connectedThread.write(add.getBytes());
         }
     }
+    public void BTErrorDestroySignal(){
+        Intent intent = new Intent("Destroy");
+        context.sendBroadcast(intent);
+    }
 
     public void Draw(Canvas canvas) {
         if (!hadSave) {
             //SaveMap();
         }
-        Play();
         //Draw background and grass
         canvas.drawColor(Color.rgb(0, 0, 0));
         Paint alphaPaint = new Paint();
@@ -280,6 +293,20 @@ public class GameView extends SurfaceView implements
         for (MapObject mapObject : map.centerObjects) {
             try {
                 mapObject.Draw(canvas);
+            } catch (Exception e) {
+                e.getCause();
+            }
+        }
+        for (Ai ai : map.ais) {
+            try {
+                ai.DrawEmotion(canvas);
+            } catch (Exception e) {
+                e.getCause();
+            }
+        }
+        for (Player player : map.players) {
+            try {
+                player.DrawEmotion(canvas);
             } catch (Exception e) {
                 e.getCause();
             }
@@ -492,15 +519,19 @@ public class GameView extends SurfaceView implements
             connectedThread.write(data);
             IsFirst = true;
             playerInfo = "PlayerMapInfo@";
-            for (MapObject mapObject : map.mapObjects) {
-                if (!IsFirst) {
-                    playerInfo += ",";
+            try {
+                for (MapObject mapObject : map.mapObjects) {
+                    if (!IsFirst) {
+                        playerInfo += ",";
+                    }
+                    playerInfo += mapObject.randNum;
+                    IsFirst = false;
                 }
-                playerInfo += mapObject.randNum;
-                IsFirst = false;
+                playerInfo += "&";
+                connectedThread.write(playerInfo.getBytes());
+            }catch (Exception e){
+                e.getCause();
             }
-            playerInfo += "&";
-            connectedThread.write(playerInfo.getBytes());
         }
     }
 
@@ -525,6 +556,7 @@ public class GameView extends SurfaceView implements
     }
 
     public void Play() {
+        gameTime++;
         hadPlayExplosion = false;
         if (isGameEnd) {
             if (!hadSaveGameEnd) {
@@ -642,38 +674,49 @@ public class GameView extends SurfaceView implements
 
     public void BTFrameEnd() {
         if (BT_MODE) {
-            String playerInfo = "PlayerFrameEnd@";
-            playerInfo += "&";
-            byte[] data = playerInfo.getBytes();
-            connectedThread.write(data);
-            if (playerMoveStr.length() > 1) {
-                data = playerMoveStr.getBytes();
+            try {
+                String playerInfo = "PlayerFrameEnd@" + gameTime;
+                playerInfo += "&";
+                byte[] data = playerInfo.getBytes();
                 connectedThread.write(data);
+                if (playerMoveStr.length() > 1) {
+                    data = playerMoveStr.getBytes();
+                    connectedThread.write(data);
+                }
+            } catch (Exception e) {
+                BTFrameEnd();
             }
         }
     }
 
     public void BTPlayerAddBomb(int x, int y) {
         if (BT_MODE) {
-            String add = "BTPlayerAddBomb@" + playerID + "," + x + "," + y + "&";
-            connectedThread.write(add.getBytes());
+            try {
+                String add = "BTPlayerAddBomb@" + playerID + "," + x + "," + y + "," + gameTime + "&";
+                connectedThread.write(add.getBytes());
+            } catch (Exception e) {
+                BTPlayerAddBomb(x, y);
+            }
         }
     }
 
     public void BTPlayerMove() {
         if (BT_MODE) {
-            for (Player player : map.players) {
-                if (player.uid.equals(playerID)) {
-                    String move = "BTPlayerMove@" + playerID
-                            + "," + player.player_x
-                            + "," + player.player_y
-                            + "," + player.character.direction
-                            + "," + player.speed_now
-                            + "&";
-                    connectedThread.write(move.getBytes());
+            try {
+                for (Player player : map.players) {
+                    if (player.uid.equals(playerID)) {
+                        String move = "BTPlayerMove@" + playerID
+                                + "," + player.player_x
+                                + "," + player.player_y
+                                + "," + player.character.direction
+                                + "," + player.speed_now
+                                + "&";
+                        connectedThread.write(move.getBytes());
+                    }
                 }
+            } catch (Exception e) {
+                BTPlayerMove();
             }
-
         }
     }
 
@@ -689,10 +732,10 @@ public class GameView extends SurfaceView implements
         }
     }
 
-    public void BTPlayerAddBombTo(String id, int x, int y) {
+    public void BTPlayerAddBombTo(String id, int x, int y, int time) {
         for (Player player : map.players) {
             if (player.uid.equals(id)) {
-                player.AddBombBT(x, y);
+                player.AddBombBT(x, y, gameTime - time);
             }
         }
     }
@@ -815,13 +858,13 @@ public class GameView extends SurfaceView implements
                     touchNowY = y;
                 }
             } else if (controlMode == 1) {
-                isControlDirection=true;
-                touchInitX=(screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT;
-                touchInitY=(screenHeight * 7) / Common.GAME_HEIGHT_UNIT;
+                isControlDirection = true;
+                touchInitX = (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT;
+                touchInitY = (screenHeight * 7) / Common.GAME_HEIGHT_UNIT;
                 double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
-                touchInitX+=widthOffset*2;
-                touchInitY+=heightOffset*2;
+                touchInitX += widthOffset * 2;
+                touchInitY += heightOffset * 2;
                 touchNowX = x;
                 touchNowY = y;
                 double touchX = x - touchInitX;

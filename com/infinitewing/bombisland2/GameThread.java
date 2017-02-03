@@ -11,10 +11,9 @@ import com.infinitewing.bombisland2.GameObject.Common;
 public class GameThread extends Thread {
     GameView gameView;
     SurfaceHolder surfaceholder;
-    long timestampBefore, timeDiff, sleep;
+    long timestampBefore, timeDiff, sleep,lastDraw=System.currentTimeMillis();
     boolean stop = false;
     boolean HadDraw = false;
-
     public GameThread(GameView gv, SurfaceHolder surfaceholder) {
         this.gameView = gv;
         this.surfaceholder = surfaceholder;
@@ -34,11 +33,26 @@ public class GameThread extends Thread {
                 if (gameView.BT_MODE) {
                     if (gameView.hadInitPlayer) {
                         if (gameView.hadInitBT) {
-                            if (gameView.FrameBalancer < 1 || gameView.isGameEnd) {
+                            if (gameView.IS_SERVER) {
                                 timestampBefore = System.currentTimeMillis();
                                 HadDraw = true;
                                 canvas = surfaceholder.lockCanvas(null);
+                                gameView.Play();
                                 gameView.Draw(canvas);
+                                lastDraw=System.currentTimeMillis();
+                            } else {
+                                int BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
+                                if (BTTimeDiff > 0 ) {
+                                    timestampBefore = System.currentTimeMillis();
+                                    HadDraw = true;
+                                    canvas = surfaceholder.lockCanvas(null);
+                                    while(BTTimeDiff>0){
+                                        gameView.Play();
+                                        BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
+                                    }
+                                    gameView.Draw(canvas);
+                                    lastDraw=System.currentTimeMillis();
+                                }
                             }
                         }
                     } else {
@@ -48,6 +62,7 @@ public class GameThread extends Thread {
                     timestampBefore = System.currentTimeMillis();
                     HadDraw = true;
                     canvas = surfaceholder.lockCanvas(null);
+                    gameView.Play();
                     gameView.Draw(canvas);
                 }
             } catch (Exception e) {
@@ -63,6 +78,12 @@ public class GameThread extends Thread {
                     sleep = Common.GAME_REFRESH - timeDiff;
                     if (sleep > 0) {
                         Thread.sleep(sleep);
+                    }
+                }
+                if(gameView.BT_MODE){
+                    if(System.currentTimeMillis()-lastDraw>3000){
+                        gameView.BTErrorDestroySignal();
+                        stop = true;
                     }
                 }
             } catch (Exception e) {
