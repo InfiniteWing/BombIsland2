@@ -39,7 +39,6 @@ public class GameThread extends Thread {
                                 canvas = surfaceholder.lockCanvas(null);
                                 gameView.Play();
                                 gameView.Draw(canvas);
-                                lastDraw=System.currentTimeMillis();
                             } else {
                                 int BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
                                 if (BTTimeDiff > 0 ) {

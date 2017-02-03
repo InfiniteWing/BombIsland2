@@ -327,7 +327,8 @@ public class Bluetooth extends Activity {
                 }
             }
         } else if (i == 1) {
-            ((ImageView) findViewById(R.id.GameVersusPlayer_PlayerIV2)).setImageBitmap(player2.character.img);
+            if (player2.character.img != null)
+                ((ImageView) findViewById(R.id.GameVersusPlayer_PlayerIV2)).setImageBitmap(player2.character.img);
             if (!hadPassValue) {
                 if (connectedThread != null) {
                     String data = "ChangeHero@" + player2.id + "&";
@@ -503,6 +504,9 @@ public class Bluetooth extends Activity {
                                         int d = Integer.parseInt(data.split(",")[3]);
                                         int s = Integer.parseInt(data.split(",")[4]);
                                         gameView.BTPlayerMoveTo(id, x, y, d, s);
+                                        if (gameView.IS_SERVER) {
+                                            gameView.gameThread.lastDraw = System.currentTimeMillis();
+                                        }
                                     } else if (dataFrame[0].equals("BTPlayerAddBomb")) {
                                         data = dataFrame[1];
                                         String id = data.split(",")[0];
@@ -567,7 +571,7 @@ public class Bluetooth extends Activity {
                             }
                         }
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.getCause();
                 }
             }
@@ -606,7 +610,8 @@ public class Bluetooth extends Activity {
             connectedThread.cancel();
         }
     }
-    public void ErrorDestroy(){
+
+    public void ErrorDestroy() {
         if (!IsFinishing) {
             IsFinishing = true;
             runOnUiThread(new Runnable() {
@@ -618,6 +623,7 @@ public class Bluetooth extends Activity {
             });
         }
     }
+
     public class ClickListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
@@ -676,16 +682,18 @@ public class Bluetooth extends Activity {
             }
         }
     }
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        if(IsPlaying){
-            if(gameView!=null) {
+        if (IsPlaying) {
+            if (gameView != null) {
                 gameView.BTErrorDestroySignal();
             }
         }
         FinishGame();
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         gamebackgroundsound.start();

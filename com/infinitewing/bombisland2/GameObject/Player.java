@@ -77,7 +77,7 @@ public class Player {
     public void DrawEmotion(Canvas canvas){
         if(!IsDead) {
             if (emotion != null) {
-                emotion.Draw(player_x, player_y - 800, canvas);
+                emotion.Draw(player_x, player_y - 777, canvas);
             }
         }
     }
