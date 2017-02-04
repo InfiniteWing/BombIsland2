@@ -163,7 +163,8 @@ public class GameView extends SurfaceView implements
             connectedThread.write(add.getBytes());
         }
     }
-    public void BTErrorDestroySignal(){
+
+    public void BTErrorDestroySignal() {
         Intent intent = new Intent("Destroy");
         context.sendBroadcast(intent);
     }
@@ -318,13 +319,13 @@ public class GameView extends SurfaceView implements
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
                     Bitmap directionOut = map.imageCaches.get("direction_out.png");
-                    alphaPaint.setAlpha(160);
+                    alphaPaint.setAlpha(120);
                     canvas.drawBitmap(directionOut,
                             (float) (touchInitX - widthOffset * 2),
                             (float) (touchInitY - heightOffset * 2),
                             alphaPaint);
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
-                    alphaPaint.setAlpha(70);
+                    alphaPaint.setAlpha(60);
                     canvas.drawBitmap(directionIn,
                             (float) (touchNowX - widthOffset * 1),
                             (float) (touchNowY - heightOffset * 1),
@@ -336,7 +337,7 @@ public class GameView extends SurfaceView implements
         } else if (controlMode == 1) {
             try {
                 Bitmap directionOut = map.imageCaches.get("direction_out.png");
-                alphaPaint.setAlpha(160);
+                alphaPaint.setAlpha(120);
                 canvas.drawBitmap(directionOut,
                         (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
                         (screenHeight * 7) / Common.GAME_HEIGHT_UNIT,
@@ -349,7 +350,7 @@ public class GameView extends SurfaceView implements
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
-                    alphaPaint.setAlpha(70);
+                    alphaPaint.setAlpha(60);
                     canvas.drawBitmap(directionIn,
                             (float) (touchNowX - widthOffset * 1),
                             (float) (touchNowY - heightOffset * 1),
@@ -359,17 +360,31 @@ public class GameView extends SurfaceView implements
                 }
             }
         } else {
-            alphaPaint.setAlpha(160);
+            alphaPaint.setAlpha(120);
             try {
                 Bitmap direction = map.imageCaches.get("direction.png");
                 canvas.drawBitmap(direction,
                         (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
-                        (screenHeight * 5) / Common.GAME_HEIGHT_UNIT,
+                        (screenHeight * 6) / Common.GAME_HEIGHT_UNIT,
                         alphaPaint);
             } catch (Exception e) {
                 e.getCause();
             }
         }
+        //右側功能列
+
+        try {
+            //炸彈
+            Bitmap directionOut = map.imageCaches.get("target.png");
+            alphaPaint.setAlpha(120);
+            canvas.drawBitmap(directionOut,
+                    (screenWidth * (13 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
+                    (screenHeight * 7) / Common.GAME_HEIGHT_UNIT,
+                    alphaPaint);
+        } catch (Exception e) {
+            e.getCause();
+        }
+
         if (isGameEnd) {
             gameEndFrameCounter++;
             canvas.drawARGB(60, 0, 0, 0);
@@ -387,6 +402,7 @@ public class GameView extends SurfaceView implements
                         (screenHeight * 2) / Common.GAME_HEIGHT_UNIT,
                         null);
             }
+            /*
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             paint.setStrokeWidth(3);
             paint.setTextSize(screenWidth / 30);
@@ -398,10 +414,31 @@ public class GameView extends SurfaceView implements
             } else {
                 canvas.drawText(str, screenWidth / 2, screenHeight * 5 / 6, paint);
             }
+            */
             if (gameEndFrameCounter > 5000 / Common.GAME_REFRESH) {
                 gameThread.stop = true;
                 GameEndSignal();
             }
+        }
+        //開始前倒數
+        if(gameTime<=25){
+            Bitmap img = map.imageCaches.get("three.png");
+            canvas.drawBitmap(img,
+                    (screenWidth * 7) / Common.GAME_WIDTH_UNIT,
+                    (screenHeight * 3) / Common.GAME_HEIGHT_UNIT,
+                    null);
+        }else if(gameTime<=50){
+            Bitmap img = map.imageCaches.get("two.png");
+            canvas.drawBitmap(img,
+                    (screenWidth * 7) / Common.GAME_WIDTH_UNIT,
+                    (screenHeight * 3) / Common.GAME_HEIGHT_UNIT,
+                    null);
+        }else if(gameTime<=75){
+            Bitmap img = map.imageCaches.get("one.png");
+            canvas.drawBitmap(img,
+                    (screenWidth * 7) / Common.GAME_WIDTH_UNIT,
+                    (screenHeight * 3) / Common.GAME_HEIGHT_UNIT,
+                    null);
         }
     }
 
@@ -529,7 +566,7 @@ public class GameView extends SurfaceView implements
                 }
                 playerInfo += "&";
                 connectedThread.write(playerInfo.getBytes());
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.getCause();
             }
         }
@@ -557,106 +594,121 @@ public class GameView extends SurfaceView implements
 
     public void Play() {
         gameTime++;
-        hadPlayExplosion = false;
-        if (isGameEnd) {
-            if (!hadSaveGameEnd) {
-                hadSaveGameEnd = true;
-                SaveData();
-            }
+        //前面先倒數
+        if(gameTime==1){
+            soundManager.addSound("countdown.mp3");
         }
-        for (MapObject mapObject : map.mapObjects) {
-            try {
-                mapObject.Play();
-            } catch (Exception e) {
-                e.getCause();
-            }
+        else if(gameTime==26){
+            soundManager.addSound("countdown.mp3");
         }
-        for (MapObject mapObject : map.mapObjects) {
-            try {
-                if (mapObject.IsEnd) {
-                    map.mapObjects.remove(mapObject);
-                    break;
+        else if(gameTime==51){
+            soundManager.addSound("countdown.mp3");
+        }
+        else if(gameTime==76){
+            soundManager.addSound("gamestart.mp3");
+        }
+        if (gameTime > 75) {
+            hadPlayExplosion = false;
+            if (isGameEnd) {
+                if (!hadSaveGameEnd) {
+                    hadSaveGameEnd = true;
+                    SaveData();
                 }
-            } catch (Exception e) {
-                e.getCause();
             }
-        }
-        for (MapObject mapObject : map.bombs) {
-            try {
-                mapObject.Play();
-            } catch (Exception e) {
-                e.getCause();
-            }
-        }
-        for (MapObject mapObject : map.bombs) {
-            try {
-                if (mapObject.IsEnd) {
-                    map.bombs.remove(mapObject);
-                    break;
+            for (MapObject mapObject : map.mapObjects) {
+                try {
+                    mapObject.Play();
+                } catch (Exception e) {
+                    e.getCause();
                 }
-            } catch (Exception e) {
-                e.getCause();
             }
-        }
-        for (Explosion explosion : map.explosions) {
-            try {
-                explosion.Play();
-            } catch (Exception e) {
-                e.getCause();
-            }
-        }
-        for (Explosion explosion : map.explosions) {
-            try {
-                if (explosion.IsEnd) {
-                    map.explosions.remove(explosion);
-                    break;
+            for (MapObject mapObject : map.mapObjects) {
+                try {
+                    if (mapObject.IsEnd) {
+                        map.mapObjects.remove(mapObject);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.getCause();
                 }
-            } catch (Exception e) {
-                e.getCause();
             }
-        }
+            for (MapObject mapObject : map.bombs) {
+                try {
+                    mapObject.Play();
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
+            for (MapObject mapObject : map.bombs) {
+                try {
+                    if (mapObject.IsEnd) {
+                        map.bombs.remove(mapObject);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
+            for (Explosion explosion : map.explosions) {
+                try {
+                    explosion.Play();
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
+            for (Explosion explosion : map.explosions) {
+                try {
+                    if (explosion.IsEnd) {
+                        map.explosions.remove(explosion);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.getCause();
+                }
+            }
 
-        if (!isGameEnd) {
+            if (!isGameEnd) {
 
-            for (Player player : map.players) {
-                if (player.uid.equals(playerID)) {
-                    player.Move();
-                } else {
-                    player.BTMove();
+                for (Player player : map.players) {
+                    if (player.uid.equals(playerID)) {
+                        player.Move();
+                    } else {
+                        player.BTMove();
+                    }
+                    player.CheckItem();
+                    player.CheckBubble();
+                    player.CheckDead(false);
                 }
-                player.CheckItem();
-                player.CheckBubble();
-                player.CheckDead(false);
-            }
-            for (Ai ai : map.ais) {
-                ai.Move();
-                ai.CheckBubble();
-                ai.CheckItem();
-                if (ai.IsDead) {
-                    continue;
+                for (Ai ai : map.ais) {
+                    ai.Move();
+                    ai.CheckBubble();
+                    ai.CheckItem();
+                    if (ai.IsDead) {
+                        continue;
+                    }
+                    ai.CheckDead();
                 }
-                ai.CheckDead();
             }
-        }
-        for (MapObject mapObject : map.centerObjects) {
-            mapObject.Play();
-        }
-        for (MapObject mapObject : map.mapFlyingObjects) {
-            mapObject.Play();
-            if (mapObject.totalTime > Common.GAME_REFRESH * 25 && !mapObject.IsEnd) {
-                MapObject obj = new MapObject(mapObject.location.x, mapObject.location.y, mapObject.type, mapObject.id, mapObject.map);
-                map.mapObjects.add(obj);
-                mapObject.IsEnd = true;
+            for (MapObject mapObject : map.centerObjects) {
+                mapObject.Play();
             }
-        }
-        for (MapObject mapObject : map.mapFlyingObjects) {
-            try {
-                if (mapObject.IsEnd) {
-                    map.mapFlyingObjects.remove(mapObject);
-                    break;
+            for (MapObject mapObject : map.mapFlyingObjects) {
+                mapObject.Play();
+                if (mapObject.totalTime > Common.GAME_REFRESH * 25 && !mapObject.IsEnd) {
+                    MapObject obj = new MapObject(mapObject.location.x, mapObject.location.y, mapObject.type, mapObject.id, mapObject.map);
+                    map.mapObjects.add(obj);
+                    mapObject.IsEnd = true;
                 }
-            } catch (Exception e) {
-                e.getCause();
+            }
+            for (MapObject mapObject : map.mapFlyingObjects) {
+                try {
+                    if (mapObject.IsEnd) {
+                        map.mapFlyingObjects.remove(mapObject);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.getCause();
+                }
             }
         }
         FrameBalancer++;
@@ -776,6 +828,9 @@ public class GameView extends SurfaceView implements
         if (isGameEnd || !isGameStart) {
             return true;
         }
+        if(gameTime<=75){
+            return true;
+        }
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_UP:
                 for (Player player : map.players) {
@@ -799,18 +854,24 @@ public class GameView extends SurfaceView implements
 
     public void Touch(double x, double y, boolean Single) {
         if (x > screenWidth / 2) {
-            for (Player player : map.players) {
-                if (player.uid.equals(playerID)) {
-                    player.AddBomb();
-                }
-            }
-            if (Single && controlMode != 0) {
-                isControlDirection = false;
-                for (Player player : map.players) {
-                    if (player.uid.equals(playerID)) {
-                        player.IsMoving = false;
-                        player.speed_now = 0;
+            double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
+            double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
+            if(x>=widthOffset*15&&x<=widthOffset*19){
+                if(y>=heightOffset*7&&y<=heightOffset*11){
+                    for (Player player : map.players) {
+                        if (player.uid.equals(playerID)) {
+                            player.AddBomb();
+                        }
+                    }
+                    if (Single && controlMode != 0) {
                         isControlDirection = false;
+                        for (Player player : map.players) {
+                            if (player.uid.equals(playerID)) {
+                                player.IsMoving = false;
+                                player.speed_now = 0;
+                                isControlDirection = false;
+                            }
+                        }
                     }
                 }
             }
@@ -819,6 +880,19 @@ public class GameView extends SurfaceView implements
                 if (isControlDirection) {
                     touchNowX = x;
                     touchNowY = y;
+                    double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
+                    double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
+                    double touchLength=
+                            Math.sqrt(Math.pow(touchNowX-touchInitX,2)+Math.pow(touchNowY-touchInitY,2));
+                    double limitLength=widthOffset+heightOffset;
+                    if(touchLength>limitLength){
+                        double offsetX=touchNowX-touchInitX;
+                        double offsetY=touchNowY-touchInitY;
+                        offsetX=offsetX*limitLength/touchLength;
+                        offsetY=offsetY*limitLength/touchLength;
+                        touchNowX=touchInitX+offsetX;
+                        touchNowY=touchInitY+offsetY;
+                    }
                     double touchX = x - touchInitX;
                     double touchY = y - touchInitY;
                     if (touchX > 0) {
@@ -867,6 +941,17 @@ public class GameView extends SurfaceView implements
                 touchInitY += heightOffset * 2;
                 touchNowX = x;
                 touchNowY = y;
+                double touchLength=
+                        Math.sqrt(Math.pow(touchNowX-touchInitX,2)+Math.pow(touchNowY-touchInitY,2));
+                double limitLength=widthOffset+heightOffset;
+                if(touchLength>limitLength){
+                    double offsetX=touchNowX-touchInitX;
+                    double offsetY=touchNowY-touchInitY;
+                    offsetX=offsetX*limitLength/touchLength;
+                    offsetY=offsetY*limitLength/touchLength;
+                    touchNowX=touchInitX+offsetX;
+                    touchNowY=touchInitY+offsetY;
+                }
                 double touchX = x - touchInitX;
                 double touchY = y - touchInitY;
                 if (touchX > 0) {
@@ -899,10 +984,10 @@ public class GameView extends SurfaceView implements
                     }
                 }
             } else {
-                int controlW = 6 * screenWidth / Common.GAME_WIDTH_UNIT;
-                int controlH = 6 * screenHeight / Common.GAME_HEIGHT_UNIT;
+                int controlW = 5 * screenWidth / Common.GAME_WIDTH_UNIT;
+                int controlH = 5 * screenHeight / Common.GAME_HEIGHT_UNIT;
                 x -= screenWidth / Common.GAME_WIDTH_UNIT;
-                y -= 5 * screenHeight / Common.GAME_HEIGHT_UNIT;
+                y -= 6 * screenHeight / Common.GAME_HEIGHT_UNIT;
                 int centerX = controlW / 2, centerY = controlH / 2;
                 int touchX = (int) x - centerX;
                 int touchY = (int) y - centerY;

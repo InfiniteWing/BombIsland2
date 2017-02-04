@@ -31,7 +31,7 @@ public class Map {
     public String id, playerID1, playerID2, playerUID;
     public String BGM, title, intro;
     public Vector<String> aiInfos;
-    public int MaxPlayer, aiCount, autoBombCounter = 0, price;
+    public int MaxPlayer=0, aiCount, autoBombCounter = 0, price;
     public boolean haveAI = false;
 
     public Map(String id, Context c) {
@@ -100,16 +100,55 @@ public class Map {
         Bitmap source = Common.getBitmapFromAsset("map/direction.png");
         Matrix matrix = new Matrix();
         matrix.reset();
-        float width = 6 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
-        float height = 6 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        float width = 5 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        float height = 5 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
         matrix.postScale((width / source.getWidth()), height / source.getHeight());
 
         source = Bitmap.createBitmap(source, 0, 0,
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("direction.png", source);
 
+        source = Common.getBitmapFromAsset("map/three.png");
+        matrix.reset();
+        width = 6 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 6 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("three.png", source);
+
+        source = Common.getBitmapFromAsset("map/two.png");
+        matrix.reset();
+        width = 6 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 6 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("two.png", source);
+
+        source = Common.getBitmapFromAsset("map/one.png");
+        matrix.reset();
+        width = 6 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 6 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("one.png", source);
+
+        source = Common.getBitmapFromAsset("map/target.png");
+        matrix.reset();
+        width = 4 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 4 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("target.png", source);
+
         source = Common.getBitmapFromAsset("map/direction_out.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 4 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 4 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -120,7 +159,6 @@ public class Map {
         imageCaches.put("direction_out.png", source);
 
         source = Common.getBitmapFromAsset("map/direction_in.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -131,7 +169,6 @@ public class Map {
         imageCaches.put("direction_in.png", source);
 
         source = Common.getBitmapFromAsset("map/lose.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 8 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 8 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -141,7 +178,6 @@ public class Map {
         imageCaches.put("lose.png", source);
 
         source = Common.getBitmapFromAsset("map/win.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 8 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 8 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -151,7 +187,6 @@ public class Map {
         imageCaches.put("win.png", source);
 
         source = Common.getBitmapFromAsset("map/bubble01.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 1 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 1 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -161,7 +196,6 @@ public class Map {
         imageCaches.put("bubble01.png", source);
 
         source = Common.getBitmapFromAsset("map/tree1.png");
-        matrix = new Matrix();
         matrix.reset();
         width = 1 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
         height = 1 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
@@ -258,7 +292,15 @@ public class Map {
                 break;
             }
             if (y < Common.MAP_HEIGHT_UNIT) {
-
+                for (int x = 0; x < line.length();x++ ) {
+                    switch (line.charAt(x)) {
+                        case 'Ｓ'://Player Start Point
+                            MaxPlayer++;
+                            break;
+                        default:
+                            break;
+                    }
+                }
             } else {
                 String tag = line.split(":")[0], value = line.split(":")[1];
                 if (tag.equals("TITLE")) {
@@ -294,9 +336,10 @@ public class Map {
                 break;
             }
             if (y < Common.MAP_HEIGHT_UNIT) {
-                for (int x = 0; x < line.length(); ) {
+                for (int x = 0; x < line.length(); x++) {
                     switch (line.charAt(x)) {
                         case 'Ｓ'://Player Start Point
+                            MaxPlayer++;
                             Location location = new Location(x, y);
                             startLocations.add(location);
                             break;
@@ -398,7 +441,6 @@ public class Map {
                             Player.AutoAddBomb(x, y, this, autoBombCounter++);
                             break;
                     }
-                    x++;
                 }
             } else {
                 String tag = line.split(":")[0], value = line.split(":")[1];

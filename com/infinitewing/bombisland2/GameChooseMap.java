@@ -33,7 +33,7 @@ public class GameChooseMap extends Activity {
     private Vector<Map> mapLists;
     private Vector<String> buyedMaps;
     private String nowMap;
-    private int money = 1000000;
+    private int money = 1000000,maxPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -171,6 +171,7 @@ public class GameChooseMap extends Activity {
                 if(buyedMaps.indexOf(nowMap)>=0) {
                     Intent intent = new Intent();
                     intent.putExtra("map", nowMap);
+                    intent.putExtra("maxPlayer", maxPlayer);
                     setResult(RESULT_OK, intent);
                     GameChooseMap.this.finish();
                 }else{
@@ -181,19 +182,8 @@ public class GameChooseMap extends Activity {
     }
 
     public void ShowMapInfo(int index) {
-        TextView tv = (TextView) findViewById(R.id.GameChooseMap_TitleTV);
-        tv.setText(mapLists.elementAt(index).title);
-        tv = (TextView) findViewById(R.id.GameChooseMap_TV);
-        tv.setText(mapLists.elementAt(index).intro);
-        ImageView iv = (ImageView) findViewById(R.id.GameChooseMap_IV);
-        Bitmap b = Common.getBitmapFromAsset("minimap/" + mapLists.elementAt(index).id + ".png", getApplicationContext());
-        iv.setImageBitmap(b);
         nowMap = mapLists.elementAt(index).id;
-        if (buyedMaps.indexOf(nowMap) >= 0) {
-            findViewById(R.id.GameChooseMap_Buy).setVisibility(View.GONE);
-        } else {
-            findViewById(R.id.GameChooseMap_Buy).setVisibility(View.VISIBLE);
-        }
+        ShowMapInfo(nowMap);
     }
 
     public void ShowMapInfo(String id) {
@@ -213,6 +203,12 @@ public class GameChooseMap extends Activity {
                     findViewById(R.id.GameChooseMap_Buy).setVisibility(View.VISIBLE);
                 }
                 break;
+            }
+        }
+        for (Map map : mapLists) {
+            if (map.id.equals(nowMap)) {
+                ((TextView) findViewById(R.id.GameChooseMap_LimitTV)).setText((String)getText(R.string.game_choose_map_limit)+map.MaxPlayer);
+                maxPlayer=map.MaxPlayer;
             }
         }
     }

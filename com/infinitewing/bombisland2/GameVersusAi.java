@@ -27,9 +27,9 @@ import java.util.Vector;
 public class GameVersusAi extends Activity {
     private Intent intent;
     private Resources res;
-    public int AiCount = 1;
+    public int AiCount = 1,maxPlayer=4;
     public Vector<ImageView> imageViews;
-    public Vector<TextView> textViews;
+    public Vector<TextView> addTVs, removeTVs;
     public Vector<LinearLayout> linearLayouts;
     public Vector<Player> ais;
     public Boolean aiOns[];
@@ -43,7 +43,8 @@ public class GameVersusAi extends Activity {
         setContentView(R.layout.game_versus_ai);
         res = getResources();
         imageViews = new Vector<>();
-        textViews = new Vector<>();
+        addTVs = new Vector<>();
+        removeTVs = new Vector<>();
         linearLayouts = new Vector<>();
         ais = new Vector<>();
         Player ai = new Player("ai02", getApplicationContext());
@@ -58,6 +59,9 @@ public class GameVersusAi extends Activity {
 
         aiNull = new Player("ai_null", getApplicationContext());
         aiOns = new Boolean[7];
+        for(int i=0;i<7;i++){
+            aiOns[i]=false;
+        }
         map = "map01";
         hero = "ai01";
 
@@ -78,13 +82,19 @@ public class GameVersusAi extends Activity {
             imageView.setOnClickListener(new ClickListener());
         }
 
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV1));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV2));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV3));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV4));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV5));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV6));
-        textViews.add((TextView) findViewById(R.id.GameVersusAi_TV7));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV2));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV3));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV4));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV5));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV6));
+        addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV7));
+
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV2));
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV3));
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV4));
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV5));
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV6));
+        removeTVs.add((TextView) findViewById(R.id.GameVersusAi_RemoveTV7));
 
         linearLayouts.add((LinearLayout) findViewById(R.id.GameVersusAi_LO1));
         linearLayouts.add((LinearLayout) findViewById(R.id.GameVersusAi_LO2));
@@ -94,29 +104,22 @@ public class GameVersusAi extends Activity {
         linearLayouts.add((LinearLayout) findViewById(R.id.GameVersusAi_LO6));
         linearLayouts.add((LinearLayout) findViewById(R.id.GameVersusAi_LO7));
 
-        findViewById(R.id.GameVersusAi_AddTV2).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_AddTV3).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_AddTV4).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_AddTV5).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_AddTV6).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_AddTV7).setOnClickListener(new ClickListener());
-
-        findViewById(R.id.GameVersusAi_RemoveTV2).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_RemoveTV3).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_RemoveTV4).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_RemoveTV5).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_RemoveTV6).setOnClickListener(new ClickListener());
-        findViewById(R.id.GameVersusAi_RemoveTV7).setOnClickListener(new ClickListener());
+        for (TextView tv : addTVs) {
+            tv.setOnClickListener(new ClickListener());
+        }
+        for (TextView tv : removeTVs) {
+            tv.setOnClickListener(new ClickListener());
+        }
 
         findViewById(R.id.GameVersusAi_Submit).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_ChooseMapTV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_PlayerIV).setOnClickListener(new ClickListener());
-        LoadHero();
-        LoadMap();
         AddAi(0);
         for (int i = 1; i < imageViews.size(); i++) {
             RemoveAi(i);
         }
+        LoadHero();
+        LoadMap();
     }
 
     public class ClickListener implements View.OnClickListener {
@@ -230,12 +233,23 @@ public class GameVersusAi extends Activity {
     }
 
     public void LoadMap() {
+        //地圖人數限制
+        for(int i=0;i<8-maxPlayer;i++){
+            RemoveAi(i+3);
+            addTVs.elementAt(i+2).setVisibility(View.GONE);
+        }
+        for(int i=0;i<maxPlayer-2;i++){
+            if(!aiOns[i+1]){
+                addTVs.elementAt(i).setVisibility(View.VISIBLE);
+            }
+        }
         Map m = new Map(map, getApplicationContext());
         TextView tv = (TextView) findViewById(R.id.GameVersusAi_TitleTV);
         tv.setText(m.title);
         ImageView iv = (ImageView) findViewById(R.id.GameVersusAi_IV);
         Bitmap b = Common.getBitmapFromAsset("minimap/" + m.id + ".png", getApplicationContext());
         iv.setImageBitmap(b);
+        ((TextView) findViewById(R.id.GameVersusAi_LimitTV)).setText((String)getText(R.string.game_choose_map_limit) + maxPlayer);
     }
 
     public void ChooseAi(int i) {
@@ -243,7 +257,7 @@ public class GameVersusAi extends Activity {
             intent = new Intent(GameVersusAi.this, GameChooseHero.class);
             intent.putExtra("hero", ais.elementAt(i).id);
             startActivityForResult(intent, 2 + i + 1);
-        }else{
+        } else {
             AddAi(i);
         }
     }
@@ -255,17 +269,28 @@ public class GameVersusAi extends Activity {
     }
 
     public void AddAi(int i) {
+        if(i+2>maxPlayer){
+            return;
+        }
         aiOns[i] = true;
         if (ais.elementAt(i) == null) {
             Player ai = new Player("ai02", getApplicationContext());
             ais.setElementAt(ai, i);
         }
         imageViews.elementAt(i).setImageBitmap(ais.elementAt(i).character.img);
+        if (i > 0) {
+            addTVs.elementAt(i - 1).setVisibility(View.GONE);
+            removeTVs.elementAt(i - 1).setVisibility(View.VISIBLE);
+        }
     }
 
     public void RemoveAi(int i) {
         aiOns[i] = false;
         imageViews.elementAt(i).setImageBitmap(aiNull.character.img);
+        if (i > 0) {
+            addTVs.elementAt(i - 1).setVisibility(View.VISIBLE);
+            removeTVs.elementAt(i - 1).setVisibility(View.GONE);
+        }
     }
 
     public int GetAiCount() {
@@ -284,6 +309,7 @@ public class GameVersusAi extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             map = data.getStringExtra("map");
+            maxPlayer=data.getIntExtra("maxPlayer",4);
             LoadMap();
         }
         if (requestCode == 2 && resultCode == RESULT_OK) {

@@ -20,7 +20,7 @@ public class SoundManager {
                     @Override
                     public void onLoadComplete(SoundPool soundPool,
                                                int sampleId, int status) {
-                        soundPool.play(sampleId, 1, 1, 0, 0, 1);
+                        soundPool.play(sampleId, 1  , 1, 0, 0, 1);
                     }
                 });
     }

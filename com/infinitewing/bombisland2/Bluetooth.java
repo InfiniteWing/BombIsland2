@@ -10,7 +10,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,7 +44,7 @@ import java.util.Vector;
  * Created by Administrator on 2016/8/20.
  */
 public class Bluetooth extends Activity {
-    public Boolean IsServer, IsStarting, IsPlaying, IsFinishing = false;
+    public Boolean IsServer, IsStarting, IsPlaying=false, IsFinishing = false;
     public Intent intent;
     Handler mHandler;
     BluetoothAdapter mBluetoothAdapter;
@@ -71,6 +74,7 @@ public class Bluetooth extends Activity {
                 // Add the name and address to an array adapter to show in a ListView
                 mArrayAdapter.add(device.getName() + "(" + device.getAddress() + ")");
                 bluetoothDevices.add(device);
+                findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
             }
             listView.setAdapter(mArrayAdapter);
         }
@@ -88,10 +92,18 @@ public class Bluetooth extends Activity {
         IsServer = getIntent().getBooleanExtra("IsServer", true);
         setContentView(R.layout.game_versus_player);
         if (IsServer) {
+            findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
             findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
             map = new Map("map01", getApplicationContext());
             InitialGame();
         } else {
+
+            ((ProgressBar) findViewById(R.id.GameVersusPlayer_ProgressBar1))
+                    .getIndeterminateDrawable()
+                    .setColorFilter((getResources().getColor(R.color.theme_color)), PorterDuff.Mode.SRC_IN);
+            ((ProgressBar) findViewById(R.id.GameVersusPlayer_ProgressBar2))
+                    .getIndeterminateDrawable()
+                    .setColorFilter((getResources().getColor(R.color.theme_color)), PorterDuff.Mode.SRC_IN);
             bluetoothDevices = new Vector<>();
             listView = (ListView) this.findViewById(R.id.GameVersusPlayer_LV);
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -123,8 +135,8 @@ public class Bluetooth extends Activity {
     }
 
     public void FindDevice() {
+        /*
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-// If there are paired devices
         if (pairedDevices.size() > 0) {
             // Loop through paired devices
             for (BluetoothDevice device : pairedDevices) {
@@ -133,6 +145,7 @@ public class Bluetooth extends Activity {
                 bluetoothDevices.add(device);
             }
         }
+        */
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();
         }
@@ -245,6 +258,8 @@ public class Bluetooth extends Activity {
 
     public void ReStartNewGame() {
         setContentView(R.layout.game_versus_player);
+
+        findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
         findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
         ShowMap(true);
         ShowHero(0, true);
@@ -306,6 +321,8 @@ public class Bluetooth extends Activity {
     public void ShowMap(boolean restart) {
         TextView tv = (TextView) findViewById(R.id.GameVersusPlayer_TitleTV);
         tv.setText(map.title);
+        tv = (TextView) findViewById(R.id.GameVersusPlayer_LimitTV);
+        tv.setText((String)getText(R.string.game_choose_map_limit) + map.MaxPlayer);
         ImageView iv = (ImageView) findViewById(R.id.GameVersusPlayer_IV);
         Bitmap b = Common.getBitmapFromAsset("minimap/" + map.id + ".png", getApplicationContext());
         iv.setImageBitmap(b);
