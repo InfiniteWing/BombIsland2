@@ -43,6 +43,7 @@ public class Ai extends Player {
                         targetLocation.y = y - 1;
                         if (character.direction != direction) {
                             speed_now = 0;
+                            character.InitImage();
                             character.direction = direction;
                         }
                         return true;
@@ -55,6 +56,7 @@ public class Ai extends Player {
                         targetLocation.y = y + 1;
                         if (character.direction != direction) {
                             speed_now = 0;
+                            character.InitImage();
                             character.direction = direction;
                         }
                         return true;
@@ -71,6 +73,7 @@ public class Ai extends Player {
                         targetLocation.x = x - 1;
                         if (character.direction != direction) {
                             speed_now = 0;
+                            character.InitImage();
                             character.direction = direction;
                         }
                         return true;
@@ -83,6 +86,7 @@ public class Ai extends Player {
                         targetLocation.x = x + 1;
                         if (character.direction != direction) {
                             speed_now = 0;
+                            character.InitImage();
                             character.direction = direction;
                         }
                         return true;
@@ -145,6 +149,7 @@ public class Ai extends Player {
                     targetLocation.y = y + 1;
                     if (character.direction != direction) {
                         speed_now = 0;
+                        character.InitImage();
                         character.direction = direction;
                     }
                     return true;
@@ -156,6 +161,7 @@ public class Ai extends Player {
                     targetLocation.x = x - 1;
                     if (character.direction != direction) {
                         speed_now = 0;
+                        character.InitImage();
                         character.direction = direction;
                     }
                     return true;
@@ -167,6 +173,7 @@ public class Ai extends Player {
                     targetLocation.y = y - 1;
                     if (character.direction != direction) {
                         speed_now = 0;
+                        character.InitImage();
                         character.direction = direction;
                     }
                     return true;
@@ -178,6 +185,7 @@ public class Ai extends Player {
                     targetLocation.x = x + 1;
                     if (character.direction != direction) {
                         speed_now = 0;
+                        character.InitImage();
                         character.direction = direction;
                     }
                     return true;
@@ -475,6 +483,7 @@ public class Ai extends Player {
     }
 
     public Boolean IsDanger(int x, int y) {
+        map.bombLock=true;
         for (MapObject mapObject : map.bombs) {
             if (x == mapObject.location.x) {
                 if (Math.abs(y - mapObject.location.y) <= mapObject.power) {
@@ -486,6 +495,7 @@ public class Ai extends Player {
                 }
             }
         }
+        map.bombLock=false;
         for (Explosion explosion : map.explosions) {
             if (x == explosion.location.x && y == explosion.location.y) {
                 if (!explosion.IsEnd) {
@@ -547,6 +557,10 @@ public class Ai extends Player {
                 }
             } else if (HaveEnemy(x, y)) {
                 InitBomb(x, y);
+            }else{
+                if(Common.RandomNum(10000)<80){
+                    InitBomb(x, y);
+                }
             }
         }
     }

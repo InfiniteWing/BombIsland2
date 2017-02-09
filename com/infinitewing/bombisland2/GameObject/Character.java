@@ -146,6 +146,9 @@ public class Character {
                     tmp_y / Common.GAME_HEIGHT_UNIT,
                     alphaPaint);
         } else {
+            if(img==null){
+                InitImage();
+            }
             canvas.drawBitmap(img,
                     tmp_x / Common.GAME_WIDTH_UNIT,
                     tmp_y / Common.GAME_HEIGHT_UNIT,

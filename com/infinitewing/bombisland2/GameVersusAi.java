@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
@@ -36,11 +37,15 @@ public class GameVersusAi extends Activity {
     public Player aiNull;
     public String hero, map;
     public MediaPlayer gamebackgroundsound;
+    public Boolean BGM;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_versus_ai);
+        SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        BGM = sp.getBoolean("BGM", true);
+
         res = getResources();
         imageViews = new Vector<>();
         addTVs = new Vector<>();
@@ -64,12 +69,12 @@ public class GameVersusAi extends Activity {
         }
         map = "map01";
         hero = "ai01";
-
-        gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
-        gamebackgroundsound.setVolume(0.3f, 0.3f);
-        gamebackgroundsound.setLooping(true);
-        gamebackgroundsound.start();
-
+        if(BGM) {
+            gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+            gamebackgroundsound.setVolume(0.3f, 0.3f);
+            gamebackgroundsound.setLooping(true);
+            gamebackgroundsound.start();
+        }
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV1));
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV2));
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV3));
@@ -114,19 +119,37 @@ public class GameVersusAi extends Activity {
         findViewById(R.id.GameVersusAi_Submit).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_ChooseMapTV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_PlayerIV).setOnClickListener(new ClickListener());
+        findViewById(R.id.GameVersusAi_Guide).setOnClickListener(new ClickListener());
         AddAi(0);
         for (int i = 1; i < imageViews.size(); i++) {
             RemoveAi(i);
         }
         LoadHero();
         LoadMap();
-    }
 
+        //判斷需不需要新手提示
+        sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        if(!sp.getBoolean("Guide_AI",false)){
+            ShowGuide();
+            SharedPreferences.Editor spEditor;
+            spEditor = sp.edit();
+            spEditor.putBoolean("Guide_AI", true).commit();
+        }
+    }
+    public void ShowGuide(){
+        Intent intent = new Intent(GameVersusAi.this, GameGuide.class);
+        intent.putExtra("guide", "ai");
+        intent.putExtra("newbe", true);
+        startActivity(intent);
+    }
     public class ClickListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
             int id = view.getId();
             switch (id) {
+                case R.id.GameVersusAi_Guide:
+                    ShowGuide();
+                    break;
                 case R.id.GameVersusAi_AddTV2:
                     AddAi(1);
                     break;
@@ -212,9 +235,9 @@ public class GameVersusAi extends Activity {
                     }
                     intent.putExtra("ai_info", ai_info);
                     startActivity(intent);
-                    gamebackgroundsound.stop();
-
-
+                    if(gamebackgroundsound!=null) {
+                        gamebackgroundsound.stop();
+                    }
                     break;
 
                 case R.id.GameVersusAi_PlayerIV:
@@ -305,7 +328,9 @@ public class GameVersusAi extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        gamebackgroundsound.start();
+        if(gamebackgroundsound!=null) {
+            gamebackgroundsound.start();
+        }
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             map = data.getStringExtra("map");
@@ -324,7 +349,9 @@ public class GameVersusAi extends Activity {
     @Override
     protected void onDestroy() {
         GameVersusAi.this.finish();
-        gamebackgroundsound.stop();
+        if(gamebackgroundsound!=null) {
+            gamebackgroundsound.stop();
+        }
         super.onDestroy();
     }
 }

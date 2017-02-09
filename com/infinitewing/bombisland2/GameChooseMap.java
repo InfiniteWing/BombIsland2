@@ -45,6 +45,12 @@ public class GameChooseMap extends Activity {
         res = getResources();
         LoadBuyedMaps();
         LoadMapList();
+        findViewById(R.id.GameChooseMap_Guide).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShowGuide();
+            }
+        });
         findViewById(R.id.GameChooseMap_Buy).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -168,13 +174,13 @@ public class GameChooseMap extends Activity {
         findViewById(R.id.GameChooseMap_Submit).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(buyedMaps.indexOf(nowMap)>=0) {
+                if (buyedMaps.indexOf(nowMap) >= 0) {
                     Intent intent = new Intent();
                     intent.putExtra("map", nowMap);
                     intent.putExtra("maxPlayer", maxPlayer);
                     setResult(RESULT_OK, intent);
                     GameChooseMap.this.finish();
-                }else{
+                } else {
                     Toast.makeText(getApplicationContext(), R.string.game_choose_map_error, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -211,5 +217,11 @@ public class GameChooseMap extends Activity {
                 maxPlayer=map.MaxPlayer;
             }
         }
+    }
+    public void ShowGuide(){
+        Intent intent = new Intent(GameChooseMap.this, GameGuide.class);
+        intent.putExtra("guide", "map");
+        intent.putExtra("newbe", true);
+        startActivity(intent);
     }
 }

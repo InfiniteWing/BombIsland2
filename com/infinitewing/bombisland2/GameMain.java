@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.MediaPlayer;
@@ -25,6 +26,7 @@ public class GameMain extends Activity {
     public GameListener gamelistener;
     public GameView gameView;
     public MediaPlayer gamebackgroundsound;
+    public Intent intent;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,9 +40,25 @@ public class GameMain extends Activity {
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
         gamebackgroundsound=new MediaPlayer();
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        Intent intent=this.getIntent();
+        intent=this.getIntent();
         setScreenSize(getApplicationContext());
+        //判斷需不需要新手提示
+        SharedPreferences sp;
+        sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        if(!sp.getBoolean("Guide_Game",false)){
+            Intent intent = new Intent(GameMain.this, GameGuide.class);
+            intent.putExtra("guide", "game");
+            intent.putExtra("newbe", true);
+            startActivityForResult(intent,1);
+            SharedPreferences.Editor spEditor;
+            spEditor = sp.edit();
+            spEditor.putBoolean("Guide_Game", true).commit();
+        }else{
+            StartGame();
+        }
+    }
+    public void StartGame(){
+
         gameView=new GameView(this,intent.getStringExtra("hero"),
                 intent.getStringExtra("map"),intent.getIntExtra("ai_count",3),intent.getStringExtra("ai_info"),gamebackgroundsound);
         setContentView(gameView);
@@ -83,7 +101,14 @@ public class GameMain extends Activity {
         gamebackgroundsound.stop();
         super.onDestroy();
     }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        gamebackgroundsound.start();
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            StartGame();
+        }
+    }
     private class GameListener extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {

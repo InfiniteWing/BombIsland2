@@ -9,15 +9,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -44,7 +43,7 @@ import java.util.Vector;
  * Created by Administrator on 2016/8/20.
  */
 public class Bluetooth extends Activity {
-    public Boolean IsServer, IsStarting, IsPlaying=false, IsFinishing = false;
+    public Boolean IsServer = false, IsStarting, IsPlaying = false, IsFinishing = false, IsClientReady = false;
     public Intent intent;
     Handler mHandler;
     BluetoothAdapter mBluetoothAdapter;
@@ -63,6 +62,7 @@ public class Bluetooth extends Activity {
     public Player player1, player2;
     public Map map;
     public View contentView;
+    public boolean BGM;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -85,11 +85,16 @@ public class Bluetooth extends Activity {
         super.onCreate(savedInstanceState);
         mHandler = new Handler();
         IsStarting = false;
-        gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
-        gamebackgroundsound.setVolume(0.3f, 0.3f);
-        gamebackgroundsound.setLooping(true);
-        gamebackgroundsound.start();
-        IsServer = getIntent().getBooleanExtra("IsServer", true);
+
+        SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        BGM = sp.getBoolean("BGM", true);
+        if(BGM) {
+            gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+            gamebackgroundsound.setVolume(0.3f, 0.3f);
+            gamebackgroundsound.setLooping(true);
+            gamebackgroundsound.start();
+        }
+        IsServer = getIntent().getBooleanExtra("IsServer", false);
         setContentView(R.layout.game_versus_player);
         if (IsServer) {
             findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
@@ -258,7 +263,8 @@ public class Bluetooth extends Activity {
 
     public void ReStartNewGame() {
         setContentView(R.layout.game_versus_player);
-
+        IsClientReady = false;
+        findViewById(R.id.GameVersusPlayer_PlayerReady).setVisibility(View.GONE);
         findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
         findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
         ShowMap(true);
@@ -272,7 +278,7 @@ public class Bluetooth extends Activity {
         } else {
             findViewById(R.id.GameVersusPlayer_PlayerIV2).setOnClickListener(new ClickListener());
             findViewById(R.id.GameVersusPlayer_ChooseMapTV).setVisibility(View.GONE);
-            findViewById(R.id.GameVersusPlayer_Submit).setVisibility(View.GONE);
+            findViewById(R.id.GameVersusPlayer_Submit).setOnClickListener(new ClickListener());
         }
     }
 
@@ -291,7 +297,7 @@ public class Bluetooth extends Activity {
             } else {
                 findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
                 findViewById(R.id.GameVersusPlayer_ChooseMapTV).setVisibility(View.GONE);
-                findViewById(R.id.GameVersusPlayer_Submit).setVisibility(View.GONE);
+                findViewById(R.id.GameVersusPlayer_Submit).setOnClickListener(new ClickListener());
                 LoadServerInitData();
             }
         } catch (Exception e) {
@@ -322,7 +328,7 @@ public class Bluetooth extends Activity {
         TextView tv = (TextView) findViewById(R.id.GameVersusPlayer_TitleTV);
         tv.setText(map.title);
         tv = (TextView) findViewById(R.id.GameVersusPlayer_LimitTV);
-        tv.setText((String)getText(R.string.game_choose_map_limit) + map.MaxPlayer);
+        tv.setText((String) getText(R.string.game_choose_map_limit) + map.MaxPlayer);
         ImageView iv = (ImageView) findViewById(R.id.GameVersusPlayer_IV);
         Bitmap b = Common.getBitmapFromAsset("minimap/" + map.id + ".png", getApplicationContext());
         iv.setImageBitmap(b);
@@ -564,11 +570,21 @@ public class Bluetooth extends Activity {
                                             }
                                         });
                                     } else if (dataFrame[0].equals("StartGame")) {
-                                        runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                StartGame();
-                                            }
-                                        });
+                                        data = dataFrame[1];
+                                        if (data.equals("Start")) {
+                                            runOnUiThread(new Runnable() {
+                                                public void run() {
+                                                    StartGame();
+                                                }
+                                            });
+                                        } else {
+                                            IsClientReady = true;
+                                            runOnUiThread(new Runnable() {
+                                                public void run() {
+                                                    findViewById(R.id.GameVersusPlayer_PlayerReady).setVisibility(View.VISIBLE);
+                                                }
+                                            });
+                                        }
                                     } else if (dataFrame[0].equals("EndGame")) {
                                         if (IsPlaying) {
                                             IsPlaying = false;
@@ -656,13 +672,21 @@ public class Bluetooth extends Activity {
                     });
                     break;
                 case R.id.GameVersusPlayer_PlayerIV2:
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            intent = new Intent(Bluetooth.this, GameChooseHero.class);
-                            intent.putExtra("hero", player2.id);
-                            startActivityForResult(intent, 3);
-                        }
-                    });
+                    if (IsClientReady) {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), R.string.game_versus_player_player_already, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    } else {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                intent = new Intent(Bluetooth.this, GameChooseHero.class);
+                                intent.putExtra("hero", player2.id);
+                                startActivityForResult(intent, 3);
+                            }
+                        });
+                    }
                     break;
                 case R.id.GameVersusPlayer_ChooseMapTV:
                 case R.id.GameVersusPlayer_IV:
@@ -677,23 +701,38 @@ public class Bluetooth extends Activity {
 
                     break;
                 case R.id.GameVersusPlayer_Submit:
-                    if (!IsStarting) {
-                        if (connectedThread != null) {
-                            IsStarting = true;
-                            String data = "StartGame@Start&";
-                            connectedThread.write(data.getBytes());
-                            runOnUiThread(new Runnable() {
-                                public void run() {
-                                    StartGame();
+                    if (IsServer) {
+                        if (!IsStarting) {
+                            if (connectedThread != null) {
+                                if (IsClientReady) {
+                                    IsStarting = true;
+                                    String data = "StartGame@Start&";
+                                    connectedThread.write(data.getBytes());
+                                    runOnUiThread(new Runnable() {
+                                        public void run() {
+                                            StartGame();
+                                        }
+                                    });
+                                } else {
+                                    runOnUiThread(new Runnable() {
+                                        public void run() {
+                                            Toast.makeText(getApplicationContext(), R.string.game_versus_player_player_notready, Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
                                 }
-                            });
-                        } else {
-                            runOnUiThread(new Runnable() {
-                                public void run() {
-                                    Toast.makeText(getApplicationContext(), R.string.game_versus_player_no_player, Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(), R.string.game_versus_player_no_player, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
                         }
+                    } else {
+                        String data = "StartGame@Ready&";
+                        IsClientReady = true;
+                        findViewById(R.id.GameVersusPlayer_PlayerReady).setVisibility(View.VISIBLE);
+                        connectedThread.write(data.getBytes());
                     }
                     break;
             }
@@ -713,7 +752,9 @@ public class Bluetooth extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        gamebackgroundsound.start();
+        if(gamebackgroundsound!=null) {
+            gamebackgroundsound.start();
+        }
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 2 && resultCode == 600) {
             registerReceiver(mReceiver, filter);

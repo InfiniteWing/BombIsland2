@@ -2,13 +2,18 @@ package com.infinitewing.bombisland2.GameObject;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 
 import com.infinitewing.bombisland2.GameView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Vector;
@@ -18,13 +23,17 @@ import java.util.Vector;
  */
 public class Map {
     public Vector<MapObject> mapObjects;
+    public Vector<MapObject> addMapObjects;
+    public Vector<MapObject> removeMapObjects;
     public Vector<MapObject> mapFlyingObjects;
     public Vector<MapObject> bombs;
     public Vector<MapObject> centerObjects;
     public Vector<Explosion> explosions;
+    public Vector<Explosion> removeExplosions;
     public Vector<Player> players;
     public Vector<Ai> ais;
     public Vector<Location> startLocations;
+    public Vector<Location> explosionLocations;
     public HashMap<String, MapObject> itemCaches;
     public HashMap<String, Bitmap> imageCaches;
     public int[][] mapObstacles;
@@ -32,7 +41,7 @@ public class Map {
     public String BGM, title, intro;
     public Vector<String> aiInfos;
     public int MaxPlayer=0, aiCount, autoBombCounter = 0, price;
-    public boolean haveAI = false;
+    public boolean haveAI = false,bombLock=false;
 
     public Map(String id, Context c) {
         this.id = id;
@@ -63,13 +72,17 @@ public class Map {
 
     public void Init(Boolean BT_MODE, Boolean IS_SERVER) {
         mapObjects = new Vector<>();
+        addMapObjects = new Vector<>();
+        removeMapObjects = new Vector<>();
         mapFlyingObjects=new Vector<>();
         centerObjects = new Vector<>();
         explosions = new Vector<>();
+        removeExplosions=new Vector<>();
         players = new Vector<>();
         bombs = new Vector<>();
         ais = new Vector<>();
         startLocations = new Vector<>();
+        explosionLocations=new Vector<>();
         imageCaches = new HashMap<>();
         itemCaches = new HashMap<>();
 
@@ -520,11 +533,13 @@ public class Map {
     }
 
     public MapObject GetBomb(int x, int y) {
+        bombLock=true;
         for (MapObject mapObject : bombs) {
             if (mapObject.location.x == x && mapObject.location.y == y) {
                 return mapObject;
             }
         }
+        bombLock=false;
         return null;
     }
 
@@ -566,7 +581,51 @@ public class Map {
         }
         return false;
     }
-
+    public void DrawFPS(Canvas canvas){
+        float startX = 10, startY = 10;
+        float height = 30;
+        float width = 240;
+        float offsetY = 5;
+        float fontSize = 26;
+        float strokeWidth = 1;
+        startX = Common.transWidth(startX);
+        startY = Common.transHeight(startY);
+        width = Common.transWidth(width);
+        height = Common.transHeight(height);
+        offsetY = Common.transHeight(offsetY);
+        strokeWidth = Common.transWidth(strokeWidth);
+        fontSize = Common.transFontSize(fontSize);
+        offsetY += height + strokeWidth;
+        Paint paint = new Paint();
+        paint.setTextSize(fontSize);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTypeface(Typeface.DEFAULT_BOLD);
+        for (int i = 0; i < 1; i++) {
+            paint.setAlpha(192);
+            paint.setColor(Color.rgb(179, 181, 181));
+            canvas.drawRect(startX - strokeWidth * 3, startY - strokeWidth * 3 + offsetY * i, startX + width + strokeWidth * 3, startY + height + strokeWidth * 3 + offsetY * i, paint);
+            paint.setColor(Color.rgb(255, 251, 240));
+            canvas.drawRect(startX - strokeWidth * 2, startY - strokeWidth * 2 + offsetY * i, startX + width + strokeWidth * 2, startY + height + offsetY * i + strokeWidth * 2, paint);
+            paint.setColor(Color.rgb(2, 165, 156));
+            float scale;
+            scale = (float) Common.GAME_REFRESH / Common.gameView.sleep;
+            if (scale > 1) {
+                scale = 1;
+            }
+            if (scale < 0) {
+                scale = 0;
+            }
+            float length = width * scale;
+            canvas.drawRect(startX, startY + offsetY * i, startX + length, startY + height + offsetY * i, paint);
+            paint.setAlpha(228);
+            paint.setColor(Color.rgb(82, 92, 109));
+            float FPS = (1000 / Common.gameView.sleep);
+                DecimalFormat df = new DecimalFormat("#.##");
+                canvas.drawText(df.format(FPS), startX + width / 2, startY + offsetY * i + fontSize, paint);
+        }
+    }
     public void Explosion(Location location) {
         for (MapObject mapObject : mapObjects) {
             mapObject.Explosion(location);

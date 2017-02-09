@@ -72,25 +72,37 @@ public class Index extends Activity {
                     startActivity(intent);
                     break;
                 case R.id.index_3:
-                    BT_Setting = new ArrayList<>();
-                    BT_Setting.add(getString(R.string.bt_setting_server));
-                    BT_Setting.add(getString(R.string.bt_setting_client));
-                    new AlertDialog.Builder(Index.this)
-                            .setItems(BT_Setting.toArray(new String[BT_Setting.size()]), new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    if(which==0){
-                                        intent = new Intent(Index.this, Bluetooth.class);
-                                        intent.putExtra("IsServer", true);
-                                        startActivity(intent);
-                                    }else{
-                                        intent = new Intent(Index.this, Bluetooth.class);
-                                        intent.putExtra("IsServer", false);
-                                        startActivity(intent);
+                    SharedPreferences sp;
+                    sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                    if(!sp.getBoolean("Guide_Bluetooth",false)){
+                        Intent intent = new Intent(Index.this, GameGuide.class);
+                        intent.putExtra("guide", "vs");
+                        intent.putExtra("newbe", true);
+                        startActivityForResult(intent,1);
+                        SharedPreferences.Editor spEditor;
+                        spEditor = sp.edit();
+                        spEditor.putBoolean("Guide_Bluetooth", true).commit();
+                    }else {
+                        BT_Setting = new ArrayList<>();
+                        BT_Setting.add(getString(R.string.bt_setting_server));
+                        BT_Setting.add(getString(R.string.bt_setting_client));
+                        new AlertDialog.Builder(Index.this)
+                                .setItems(BT_Setting.toArray(new String[BT_Setting.size()]), new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        if (which == 0) {
+                                            intent = new Intent(Index.this, Bluetooth.class);
+                                            intent.putExtra("IsServer", true);
+                                            startActivity(intent);
+                                        } else {
+                                            intent = new Intent(Index.this, Bluetooth.class);
+                                            intent.putExtra("IsServer", false);
+                                            startActivity(intent);
+                                        }
                                     }
-                                }
-                            })
-                            .show();
+                                })
+                                .show();
+                    }
                     break;
                 case R.id.index_4:
                     intent = new Intent(Index.this, GameSetting.class);
@@ -129,9 +141,9 @@ public class Index extends Activity {
 
     public void ShowUpdate(boolean forceShow) throws IOException {
         SharedPreferences sp;
-        sp = getSharedPreferences("bombisland2", MODE_PRIVATE);
+        sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
         if (sp.getBoolean("show_update", true) || forceShow) {
-            InputStream is = null;
+            InputStream is;
             is = Common.getInputStream("update.txt", getApplicationContext());
             InputStreamReader reader = new InputStreamReader(is, "UTF-8");
             BufferedReader br = new BufferedReader(reader);
@@ -165,7 +177,7 @@ public class Index extends Activity {
                             public void onClick(DialogInterface dialog, int id) {
                                 if (((CheckBox)update_view.findViewById(R.id.FormSystemUpdate_CheckBox)).isChecked()) {
                                     SharedPreferences sp;
-                                    sp = getSharedPreferences("bombisland2", MODE_PRIVATE);
+                                    sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
                                     SharedPreferences.Editor spEditor;
                                     spEditor = sp.edit();
                                     spEditor.putBoolean("show_update", false).commit();
@@ -173,6 +185,31 @@ public class Index extends Activity {
                             }
                         }).show();
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode==1){
+            BT_Setting = new ArrayList<>();
+            BT_Setting.add(getString(R.string.bt_setting_server));
+            BT_Setting.add(getString(R.string.bt_setting_client));
+            new AlertDialog.Builder(Index.this)
+                    .setItems(BT_Setting.toArray(new String[BT_Setting.size()]), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (which == 0) {
+                                intent = new Intent(Index.this, Bluetooth.class);
+                                intent.putExtra("IsServer", true);
+                                startActivity(intent);
+                            } else {
+                                intent = new Intent(Index.this, Bluetooth.class);
+                                intent.putExtra("IsServer", false);
+                                startActivity(intent);
+                            }
+                        }
+                    })
+                    .show();
         }
     }
 }

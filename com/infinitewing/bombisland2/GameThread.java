@@ -27,6 +27,7 @@ public class GameThread extends Thread {
             e.printStackTrace();
         }
         gameView.StartBGM();
+        timestampBefore = System.currentTimeMillis();
         while (!stop) {
             try {
                 HadDraw = false;
@@ -34,7 +35,6 @@ public class GameThread extends Thread {
                     if (gameView.hadInitPlayer) {
                         if (gameView.hadInitBT) {
                             if (gameView.IS_SERVER) {
-                                timestampBefore = System.currentTimeMillis();
                                 HadDraw = true;
                                 canvas = surfaceholder.lockCanvas(null);
                                 gameView.Play();
@@ -42,7 +42,6 @@ public class GameThread extends Thread {
                             } else {
                                 int BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
                                 if (BTTimeDiff > 0 ) {
-                                    timestampBefore = System.currentTimeMillis();
                                     HadDraw = true;
                                     canvas = surfaceholder.lockCanvas(null);
                                     while(BTTimeDiff>0){
@@ -58,7 +57,6 @@ public class GameThread extends Thread {
                         gameView.InitBTGame();
                     }
                 } else {
-                    timestampBefore = System.currentTimeMillis();
                     HadDraw = true;
                     canvas = surfaceholder.lockCanvas(null);
                     gameView.Play();
@@ -77,7 +75,11 @@ public class GameThread extends Thread {
                     sleep = Common.GAME_REFRESH - timeDiff;
                     if (sleep > 0) {
                         Thread.sleep(sleep);
+                        gameView.sleep=Common.GAME_REFRESH;
+                    }else{
+                        gameView.sleep=timeDiff;
                     }
+                    timestampBefore=System.currentTimeMillis();
                 }
                 if(gameView.BT_MODE){
                     if(System.currentTimeMillis()-lastDraw>3000){

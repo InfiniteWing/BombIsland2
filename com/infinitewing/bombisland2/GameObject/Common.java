@@ -27,6 +27,15 @@ public class Common {
         Random random=new Random();
         return random.nextInt(s)+1;
     }
+    public static float transWidth(float w){
+        return w*Common.gameView.screenWidth/1280;
+    }
+    public static float transHeight(float h){
+        return h*Common.gameView.screenHeight/768;
+    }
+    public static float transFontSize(float s){
+        return s*Common.gameView.screenWidth/1280;
+    }
     public static InputStream getInputStream(String path, Context context) throws IOException {
         InputStream is = null;
         AssetManager am = context.getAssets();

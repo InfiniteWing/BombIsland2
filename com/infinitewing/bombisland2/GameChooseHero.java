@@ -46,6 +46,12 @@ public class GameChooseHero extends Activity {
         nowHero = getIntent().getStringExtra("hero");
         LoadBuyedHeros();
         LoadHeroList();
+        findViewById(R.id.GameChooseHero_Guide).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShowGuide();
+            }
+        });
         findViewById(R.id.GameChooseHero_Buy).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -171,12 +177,12 @@ public class GameChooseHero extends Activity {
         findViewById(R.id.GameChooseHero_Submit).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(buyedHeros.indexOf(nowHero)>=0) {
+                if (buyedHeros.indexOf(nowHero) >= 0) {
                     Intent intent = new Intent();
                     intent.putExtra("hero", nowHero);
                     setResult(RESULT_OK, intent);
                     GameChooseHero.this.finish();
-                }else{
+                } else {
                     Toast.makeText(getApplicationContext(), R.string.game_choose_hero_error, Toast.LENGTH_SHORT).show();
                 }
             }
@@ -218,5 +224,11 @@ public class GameChooseHero extends Activity {
                 break;
             }
         }
+    }
+    public void ShowGuide(){
+        Intent intent = new Intent(GameChooseHero.this, GameGuide.class);
+        intent.putExtra("guide", "hero");
+        intent.putExtra("newbe", true);
+        startActivity(intent);
     }
 }

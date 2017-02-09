@@ -49,7 +49,7 @@ public class Explosion {
             if (delay <= 0) {
                 animation.Play();
                 if (animation.IsEnd() && !animation.loop) {
-                    map.Explosion(location);
+                    map.explosionLocations.add(location);
                     IsEnd = true;
                 }
             }
@@ -59,6 +59,9 @@ public class Explosion {
 
     public void Draw(Canvas canvas) {
         if (!IsEnd && delay <= 0) {
+            if(animation.img==null){
+                animation.InitImage();
+            }
             canvas.drawBitmap(animation.img,
                     (Common.gameView.screenWidth * (location.x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
                     (Common.gameView.screenHeight * location.y) / Common.GAME_HEIGHT_UNIT,

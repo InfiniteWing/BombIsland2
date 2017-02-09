@@ -97,6 +97,8 @@ public class Player {
                     MapObject bomb = new MapObject(x, y, MapObject.TYPE_BOMB, "bomb1", map);
                     bomb.power = wb_power;
                     bomb.player = this;
+                    while(map.bombLock){
+                    }
                     map.bombs.add(bomb);
                     wb--;
                     Common.gameView.soundManager.addSound("setbomb.mp3");
@@ -113,6 +115,8 @@ public class Player {
         while(timeOffset>0){
             bomb.Play();
             timeOffset--;
+        }
+        while(map.bombLock){
         }
         map.bombs.add(bomb);
         Common.gameView.soundManager.addSound("setbomb.mp3");
@@ -311,7 +315,7 @@ public class Player {
         }
         for (Ai ai: map.ais) {
             if(ai.IsBubbled&&!ai.IsDead){
-                if(ai.bubbledTime<=40){
+                if(ai.bubbledTime<=80){
                     continue;
                 }
                 if(Math.abs(player_x-ai.player_x)<=Common.PLAYER_POSITION_RATE / 2
@@ -327,7 +331,7 @@ public class Player {
         }
         for (Player player: map.players) {
             if(player.IsBubbled){
-                if(player.bubbledTime<=40){
+                if(player.bubbledTime<=80){
                     continue;
                 }
                 if(Math.abs(player_x-player.player_x)<=Common.PLAYER_POSITION_RATE / 2

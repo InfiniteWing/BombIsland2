@@ -129,6 +129,9 @@ public class MapObject {
     }
 
     public void Draw(Canvas canvas) {
+        if(animation.img==null){
+            animation.InitImage();
+        }
         if (!IsEnd) {
             if (startLocation != null) {//flyingObject
                 int offsetX = Math.abs(location.x - startLocation.x);
@@ -156,6 +159,9 @@ public class MapObject {
     }
 
     public void Draw(int x, int y, Canvas canvas) {
+        if(animation.img==null){
+            animation.InitImage();
+        }
         int tmp_x = x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
         int tmp_y = y;
         tmp_x *= Common.gameView.screenWidth;
@@ -321,7 +327,7 @@ public class MapObject {
                     if (type == MapObject.TYPE_DESTROYABLE || type == MapObject.TYPE_DESTROYABLE_MOVABLE) {
                         if (item != null) {
                             map.mapObstacles[location.x][location.y] = -1;
-                            map.mapObjects.add(item);
+                            map.addMapObjects.add(item);
                         } else {
                             map.mapObstacles[location.x][location.y] = 0;
                         }
