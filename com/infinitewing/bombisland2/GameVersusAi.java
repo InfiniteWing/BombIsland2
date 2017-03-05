@@ -272,7 +272,7 @@ public class GameVersusAi extends Activity {
         ImageView iv = (ImageView) findViewById(R.id.GameVersusAi_IV);
         Bitmap b = Common.getBitmapFromAsset("minimap/" + m.id + ".png", getApplicationContext());
         iv.setImageBitmap(b);
-        ((TextView) findViewById(R.id.GameVersusAi_LimitTV)).setText((String)getText(R.string.game_choose_map_limit) + maxPlayer);
+        ((TextView) findViewById(R.id.GameVersusAi_LimitTV)).setText((String) getText(R.string.game_choose_map_limit) + maxPlayer);
     }
 
     public void ChooseAi(int i) {
@@ -345,13 +345,49 @@ public class GameVersusAi extends Activity {
             SetAi(requestCode - 3, data.getStringExtra("hero"));
         }
     }
-
+    public void PlayBGM(){
+        try {
+            if (BGM) {
+                if(gamebackgroundsound==null) {
+                    gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+                }
+                gamebackgroundsound.setVolume(0.3f, 0.3f);
+                gamebackgroundsound.setLooping(true);
+                if(!gamebackgroundsound.isPlaying()) {
+                    gamebackgroundsound.start();
+                }
+            }
+        }catch (Exception e){
+            e.getCause();
+        }
+    }
+    public void Pause(){
+        if(gamebackgroundsound!=null){
+            if(gamebackgroundsound.isPlaying()){
+                gamebackgroundsound.stop();
+            }
+            gamebackgroundsound.reset();
+            gamebackgroundsound.release();
+            gamebackgroundsound=null;
+        }
+    }
+    public void Restart(){
+        PlayBGM();
+    }
+    @Override
+    protected void onRestart(){
+        Restart();
+        super.onRestart();
+    }
+    @Override
+    protected void onPause() {
+        Pause();
+        super.onPause();
+    }
     @Override
     protected void onDestroy() {
         GameVersusAi.this.finish();
-        if(gamebackgroundsound!=null) {
-            gamebackgroundsound.stop();
-        }
+        Pause();
         super.onDestroy();
     }
 }

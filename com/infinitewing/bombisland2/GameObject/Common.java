@@ -1,6 +1,7 @@
 package com.infinitewing.bombisland2.GameObject;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -59,6 +60,14 @@ public class Common {
     }
     public static Bitmap getBitmapFromAsset(String str)
     {
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        if(gameView!=null) {
+            SharedPreferences sp = gameView.getContext().getSharedPreferences(Common.APP_NAME, gameView.getContext().MODE_PRIVATE);
+            if (sp.getBoolean("bitmapOpt", false)) {
+                 op.inPreferredConfig = Bitmap.Config.ARGB_4444;
+            }
+        }
         AssetManager assetManager = gameView.getContext().getAssets();
         InputStream inputStream = null;
         try {
@@ -66,11 +75,19 @@ public class Common {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+        Bitmap bitmap = BitmapFactory.decodeStream(inputStream,null,op);
         return bitmap;
     }
     public static Bitmap getBitmapFromAsset(String str,Context c)
     {
+        BitmapFactory.Options op = new BitmapFactory.Options();
+        op.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        if(gameView!=null) {
+            SharedPreferences sp = gameView.getContext().getSharedPreferences(Common.APP_NAME, gameView.getContext().MODE_PRIVATE);
+            if (sp.getBoolean("bitmapOpt", false)) {
+                op.inPreferredConfig = Bitmap.Config.ARGB_4444;
+            }
+        }
         AssetManager assetManager = c.getAssets();
         InputStream inputStream = null;
         try {
@@ -78,7 +95,7 @@ public class Common {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+        Bitmap bitmap = BitmapFactory.decodeStream(inputStream,null,op);
         return bitmap;
     }
 }

@@ -105,6 +105,7 @@ public class GameView extends SurfaceView implements
         BGM = sp.getBoolean("BGM", true);
         effSound = sp.getBoolean("effSound", true);
         effVibrator = sp.getBoolean("effVibrator", true);
+        FPS = sp.getBoolean("FPS", false);
         controlMode = sp.getInt("controlMode", 0);
 
         this.getHolder().addCallback(this);

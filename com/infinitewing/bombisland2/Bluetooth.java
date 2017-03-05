@@ -88,12 +88,6 @@ public class Bluetooth extends Activity {
 
         SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
         BGM = sp.getBoolean("BGM", true);
-        if(BGM) {
-            gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
-            gamebackgroundsound.setVolume(0.3f, 0.3f);
-            gamebackgroundsound.setLooping(true);
-            gamebackgroundsound.start();
-        }
         IsServer = getIntent().getBooleanExtra("IsServer", false);
         setContentView(R.layout.game_versus_player);
         if (IsServer) {
@@ -262,6 +256,8 @@ public class Bluetooth extends Activity {
     }
 
     public void ReStartNewGame() {
+        Pause();
+        PlayBGM();
         setContentView(R.layout.game_versus_player);
         IsClientReady = false;
         findViewById(R.id.GameVersusPlayer_PlayerReady).setVisibility(View.GONE);
@@ -629,9 +625,7 @@ public class Bluetooth extends Activity {
     }
 
     public void FinishGame() {
-        if (gamebackgroundsound != null) {
-            gamebackgroundsound.stop();
-        }
+        Pause();
         try {
             unregisterReceiver(mReceiver);
         } catch (IllegalArgumentException e) {
@@ -752,9 +746,7 @@ public class Bluetooth extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(gamebackgroundsound!=null) {
-            gamebackgroundsound.start();
-        }
+        PlayBGM();
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 2 && resultCode == 600) {
             registerReceiver(mReceiver, filter);
@@ -779,8 +771,45 @@ public class Bluetooth extends Activity {
             }
         }
     }
-
-
+    public void PlayBGM(){
+        try {
+            if (BGM) {
+                if(gamebackgroundsound==null) {
+                    gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+                }
+                gamebackgroundsound.setVolume(0.3f, 0.3f);
+                gamebackgroundsound.setLooping(true);
+                if(!gamebackgroundsound.isPlaying()) {
+                    gamebackgroundsound.start();
+                }
+            }
+        }catch (Exception e){
+            e.getCause();
+        }
+    }
+    public void Pause(){
+        if(gamebackgroundsound!=null){
+            if(gamebackgroundsound.isPlaying()){
+                gamebackgroundsound.stop();
+            }
+            gamebackgroundsound.reset();
+            gamebackgroundsound.release();
+            gamebackgroundsound=null;
+        }
+    }
+    public void Restart(){
+        PlayBGM();
+    }
+    @Override
+    protected void onRestart(){
+        Restart();
+        super.onRestart();
+    }
+    @Override
+    protected void onPause() {
+        Pause();
+        super.onPause();
+    }
     @Override
     protected void onDestroy() {
         FinishGame();

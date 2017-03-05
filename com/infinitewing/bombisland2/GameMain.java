@@ -95,15 +95,35 @@ public class GameMain extends Activity {
         Common.SCREEN_WIDTH=width;
         Common.SCREEN_HEIGHT=height;
     }
+    public void Pause(){
+        if(gamebackgroundsound!=null){
+            if(gamebackgroundsound.isPlaying()){
+                gamebackgroundsound.stop();
+            }
+            gamebackgroundsound.reset();
+            gamebackgroundsound.release();
+            gamebackgroundsound=null;
+        }
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Pause();
+        GameMain.this.finish();
+    }
     @Override
     protected void onDestroy() {
+        Pause();
         GameMain.this.finish();
-        gamebackgroundsound.stop();
         super.onDestroy();
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        gamebackgroundsound.start();
+        if(gamebackgroundsound!=null) {
+            if(!gamebackgroundsound.isPlaying()) {
+                gamebackgroundsound.start();
+            }
+        }
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1) {
             StartGame();

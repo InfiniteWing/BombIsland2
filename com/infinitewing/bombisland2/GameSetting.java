@@ -21,7 +21,7 @@ import java.util.Set;
  * Created by Administrator on 2017/2/2.
  */
 public class GameSetting extends Activity {
-    private boolean BGM, effSound, effVibrator,FPS;
+    private boolean BGM, effSound, effVibrator,FPS,bitmapOpt;
     private int controlMode;
     private SharedPreferences sp;
 
@@ -35,11 +35,13 @@ public class GameSetting extends Activity {
         effSound = sp.getBoolean("effSound", true);
         effVibrator = sp.getBoolean("effVibrator", true);
         FPS = sp.getBoolean("FPS", false);
+        bitmapOpt = sp.getBoolean("bitmapOpt", false);
         controlMode = sp.getInt("controlMode", 0);
         ((Switch) findViewById(R.id.Setting_SW_1)).setChecked(BGM);
         ((Switch) findViewById(R.id.Setting_SW_2)).setChecked(effSound);
         ((Switch) findViewById(R.id.Setting_SW_3)).setChecked(effVibrator);
         ((Switch) findViewById(R.id.Setting_SW_4)).setChecked(FPS);
+        ((Switch) findViewById(R.id.Setting_SW_5)).setChecked(bitmapOpt);
         if(controlMode==0) {
             ((RadioGroup) findViewById(R.id.Setting_RG)).check(R.id.Setting_RB_1);
         }
@@ -60,6 +62,7 @@ public class GameSetting extends Activity {
         effSound = ((Switch) findViewById(R.id.Setting_SW_2)).isChecked();
         effVibrator = ((Switch) findViewById(R.id.Setting_SW_3)).isChecked();
         FPS = ((Switch) findViewById(R.id.Setting_SW_4)).isChecked();
+        bitmapOpt= ((Switch) findViewById(R.id.Setting_SW_5)).isChecked();
         switch (((RadioGroup) findViewById(R.id.Setting_RG)).getCheckedRadioButtonId()){
             case R.id.Setting_RB_1:
                 controlMode=0;
@@ -80,6 +83,7 @@ public class GameSetting extends Activity {
                 .putBoolean("effSound", effSound)
                 .putBoolean("effVibrator", effVibrator)
                 .putBoolean("FPS", FPS)
+                .putBoolean("bitmapOpt",bitmapOpt)
                 .putInt("controlMode", controlMode).commit();
         Toast.makeText(getApplicationContext(), "保存成功", Toast.LENGTH_SHORT).show();
         GameSetting.this.finish();
