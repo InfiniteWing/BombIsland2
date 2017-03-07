@@ -217,7 +217,7 @@ public class Player {
             return;
         }
         if(IsBubbled){
-            if(bubbledTime>Common.GAME_REFRESH*100){
+            if(bubbledTime>Common.GAME_REFRESH*130){
                 PlayDead();
             }
             return;

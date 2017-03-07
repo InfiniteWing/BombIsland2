@@ -58,8 +58,9 @@ public class GameChooseHero extends Activity {
                 for (final Player hero : heroLists) {
                     if (hero.id.equals(nowHero)) {
                         String message = "";
-                        message += "請問是否購買本英雄(" + hero.heroName + ")\n" +
-                                "英雄售價 $" + hero.price + "，您目前持有 $" + money;
+                        message += Common.getStringResourceByName("game_choose_hero_buy_message01",getApplicationContext())+"?\n" +
+                                Common.getStringResourceByName("game_choose_hero_buy_message02",getApplicationContext()) + hero.price +".\n"+
+                                Common.getStringResourceByName("game_choose_hero_buy_message03",getApplicationContext()) + money+".";
                         new AlertDialog.Builder(GameChooseHero.this)
                                 .setTitle(R.string.game_choose_hero_buy_title)
                                 .setMessage(message)

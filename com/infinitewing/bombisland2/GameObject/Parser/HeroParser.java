@@ -51,6 +51,7 @@ public class HeroParser {
             }
             if (tag.equals("Name")) {
                 player.heroName = value;
+                player.heroName = Common.getStringResourceByName("hero_name_"+player.id,c);
             }
             if (tag.equals("Speed")) {
                 player.speed = Integer.parseInt(value);

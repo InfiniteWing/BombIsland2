@@ -28,7 +28,7 @@ import java.util.Vector;
 public class GameVersusAi extends Activity {
     private Intent intent;
     private Resources res;
-    public int AiCount = 1,maxPlayer=4;
+    public int AiCount = 1,maxPlayer=8;
     public Vector<ImageView> imageViews;
     public Vector<TextView> addTVs, removeTVs;
     public Vector<LinearLayout> linearLayouts;
@@ -67,8 +67,8 @@ public class GameVersusAi extends Activity {
         for(int i=0;i<7;i++){
             aiOns[i]=false;
         }
-        map = "map01";
-        hero = "ai01";
+        map = "bombisland01";
+        hero=sp.getString("Last_Pick_Hero","ai01");
         if(BGM) {
             gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
             gamebackgroundsound.setVolume(0.3f, 0.3f);
@@ -235,6 +235,12 @@ public class GameVersusAi extends Activity {
                     }
                     intent.putExtra("ai_info", ai_info);
                     startActivity(intent);
+
+                    SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                    SharedPreferences.Editor spEditor;
+                    spEditor = sp.edit();
+                    spEditor.putString("Last_Pick_Hero", hero).commit();
+
                     if(gamebackgroundsound!=null) {
                         gamebackgroundsound.stop();
                     }
@@ -258,8 +264,8 @@ public class GameVersusAi extends Activity {
     public void LoadMap() {
         //地圖人數限制
         for(int i=0;i<8-maxPlayer;i++){
-            RemoveAi(i+3);
-            addTVs.elementAt(i+2).setVisibility(View.GONE);
+            RemoveAi(i+maxPlayer-1);
+            addTVs.elementAt(i+maxPlayer-2).setVisibility(View.GONE);
         }
         for(int i=0;i<maxPlayer-2;i++){
             if(!aiOns[i+1]){

@@ -93,7 +93,7 @@ public class Bluetooth extends Activity {
         if (IsServer) {
             findViewById(R.id.GameVersusPlayer_BTNowLoading).setVisibility(View.GONE);
             findViewById(R.id.GameVersusPlayer_BTListLO).setVisibility(View.GONE);
-            map = new Map("map01", getApplicationContext());
+            map = new Map("bombisland01", getApplicationContext());
             InitialGame();
         } else {
 
@@ -281,7 +281,10 @@ public class Bluetooth extends Activity {
     public void InitialGame() {
         try {
             if (IsServer) {
-                player1 = new Player("ai01", getApplicationContext());
+                SharedPreferences sp;
+                sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                String heroName=sp.getString("Last_Pick_Hero","ai01");
+                player1 = new Player(heroName, getApplicationContext());
                 player2 = new Player("ai_null", getApplicationContext());
                 ((ImageView) findViewById(R.id.GameVersusPlayer_PlayerIV1)).setImageBitmap(player1.character.img);
                 ((ImageView) findViewById(R.id.GameVersusPlayer_PlayerIV2)).setImageBitmap(player2.character.img);
@@ -303,7 +306,10 @@ public class Bluetooth extends Activity {
 
     public void LoadServerInitData() {
         try {
-            player2 = new Player("ai02", getApplicationContext());
+            SharedPreferences sp;
+            sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+            String heroName=sp.getString("Last_Pick_Hero","ai02");
+            player2 = new Player(heroName, getApplicationContext());
             ((ImageView) findViewById(R.id.GameVersusPlayer_PlayerIV2)).setImageBitmap(player2.character.img);
             findViewById(R.id.GameVersusPlayer_PlayerIV2).setOnClickListener(new ClickListener());
             if (connectedThread != null) {

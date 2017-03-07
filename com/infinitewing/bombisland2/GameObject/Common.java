@@ -98,4 +98,9 @@ public class Common {
         Bitmap bitmap = BitmapFactory.decodeStream(inputStream,null,op);
         return bitmap;
     }
+    public static String getStringResourceByName(String stringTag,Context c) {
+        String packageName = c.getPackageName();
+        int resId = c.getResources().getIdentifier(stringTag, "string", packageName);
+        return c.getString(resId)==null?"":c.getString(resId);
+    }
 }

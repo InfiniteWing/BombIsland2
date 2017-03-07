@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 
 import com.infinitewing.bombisland2.GameView;
+import com.infinitewing.bombisland2.R;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -318,9 +319,11 @@ public class Map {
                 String tag = line.split(":")[0], value = line.split(":")[1];
                 if (tag.equals("TITLE")) {
                     title = value;
+                    title = Common.getStringResourceByName("map_info_title_"+id,c);
                 }
                 if (tag.equals("INTRO")) {
                     intro = value;
+                    intro = Common.getStringResourceByName("map_info_intro_"+id,c);
                 }
             }
             if (line.length() > 10) {
@@ -523,7 +526,11 @@ public class Map {
                         break;
                     }
                 }
-                ai = new Ai(aiInfos.elementAt(aiIndex++), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, Ai.IQ_10);
+                int aiLevel=Ai.IQ_10;
+                if(Common.RandomNum(1000)>800){
+                    aiLevel=Ai.IQ_30;
+                }
+                ai = new Ai(aiInfos.elementAt(aiIndex++), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
                 ai.InitEmotion("emotion_ai");
                 ais.add(ai);
                 randomNumLimit.add(randomNum);

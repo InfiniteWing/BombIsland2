@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class GameGuide extends Activity {
     public String guide = "game";
@@ -54,7 +55,12 @@ public class GameGuide extends Activity {
                 guide = "game";
                 break;
         }
-        ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/" + guide + ".html");
+        String language = Locale.getDefault().getLanguage();
+        if(language.equals("zh")) {
+            ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/" + guide + ".html");
+        }else{
+            ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/en/" + guide + ".html");
+        }
     }
 
     public class ClickListener implements View.OnClickListener {

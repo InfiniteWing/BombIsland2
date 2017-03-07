@@ -22,24 +22,24 @@ public class Ai extends Player {
         this.type = type;
         targetLocation = new Location(x, y);
     }
-    public Boolean CheckBubbleMove(){
+
+    public Boolean CheckBubbleMove() {
         int x = targetLocation.x;
         int y = targetLocation.y;
-        for(Ai ai:map.ais){
-            if(!ai.IsBubbled){
+        for (Ai ai : map.ais) {
+            if (!ai.IsBubbled) {
                 continue;
             }
             int pX = (ai.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             int pY = (ai.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             int direction;
-            if(x==pX){
-                if(Math.abs(y-pY)>0){
-                    if(y>pY){
-                        if(map.mapObstacles[x][y-1]>0)
-                        {
+            if (x == pX) {
+                if (Math.abs(y - pY) > 0) {
+                    if (y > pY) {
+                        if (map.mapObstacles[x][y - 1] > 0) {
                             continue;
                         }
-                        direction=Location.LOCATION_TOP;
+                        direction = Location.LOCATION_TOP;
                         targetLocation.y = y - 1;
                         if (character.direction != direction) {
                             speed_now = 0;
@@ -47,12 +47,11 @@ public class Ai extends Player {
                             character.direction = direction;
                         }
                         return true;
-                    }else{
-                        if(map.mapObstacles[x][y+1]>0)
-                        {
+                    } else {
+                        if (map.mapObstacles[x][y + 1] > 0) {
                             continue;
                         }
-                        direction=Location.LOCATION_DOWN;
+                        direction = Location.LOCATION_DOWN;
                         targetLocation.y = y + 1;
                         if (character.direction != direction) {
                             speed_now = 0;
@@ -62,14 +61,13 @@ public class Ai extends Player {
                         return true;
                     }
                 }
-            }else if(y==pY){
-                if(Math.abs(x-pX)>0){
-                    if(x>pX){
-                        if(map.mapObstacles[x-1][y]>0)
-                        {
+            } else if (y == pY) {
+                if (Math.abs(x - pX) > 0) {
+                    if (x > pX) {
+                        if (map.mapObstacles[x - 1][y] > 0) {
                             continue;
                         }
-                        direction=Location.LOCATION_LEFT;
+                        direction = Location.LOCATION_LEFT;
                         targetLocation.x = x - 1;
                         if (character.direction != direction) {
                             speed_now = 0;
@@ -77,12 +75,11 @@ public class Ai extends Player {
                             character.direction = direction;
                         }
                         return true;
-                    }else{
-                        if(map.mapObstacles[x+1][y]>0)
-                        {
+                    } else {
+                        if (map.mapObstacles[x + 1][y] > 0) {
                             continue;
                         }
-                        direction=Location.LOCATION_RIGHT;
+                        direction = Location.LOCATION_RIGHT;
                         targetLocation.x = x + 1;
                         if (character.direction != direction) {
                             speed_now = 0;
@@ -96,6 +93,7 @@ public class Ai extends Player {
         }
         return false;
     }
+
     public Boolean CheckItemMove() {
         int x = targetLocation.x;
         int y = targetLocation.y;
@@ -138,10 +136,97 @@ public class Ai extends Player {
         }
     }
 
+    public Boolean FollowMoveTo(int x, int y, int pX, int pY, int d) {
+        boolean check;
+        switch (d) {
+            case Location.LOCATION_LEFT:
+                if (x > pX) {
+                    check = (CanMove(x - 1, y) && HaveExit(x - 1, y));
+                    if (check && character.direction != Location.LOCATION_RIGHT) {
+                        targetLocation.x = x - 1;
+                        if (character.direction != Location.LOCATION_LEFT) {
+                            speed_now = 0;
+                            character.InitImage();
+                            character.direction = Location.LOCATION_LEFT;
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case Location.LOCATION_RIGHT:
+                if (x < pX) {
+                    check = (CanMove(x + 1, y) && HaveExit(x + 1, y));
+                    if (check && character.direction != Location.LOCATION_LEFT) {
+                        targetLocation.x = x + 1;
+                        if (character.direction != Location.LOCATION_RIGHT) {
+                            speed_now = 0;
+                            character.InitImage();
+                            character.direction = Location.LOCATION_RIGHT;
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case Location.LOCATION_TOP:
+                if (y > pY) {
+                    check = (CanMove(x, y - 1) && HaveExit(x, y - 1));
+                    if (check && character.direction != Location.LOCATION_DOWN) {
+                        targetLocation.y = y - 1;
+                        if (character.direction != Location.LOCATION_TOP) {
+                            speed_now = 0;
+                            character.InitImage();
+                            character.direction = Location.LOCATION_TOP;
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case Location.LOCATION_DOWN:
+                if (y < pY) {
+                    check = (CanMove(x, y + 1) && HaveExit(x, y + 1));
+                    if (check && character.direction != Location.LOCATION_TOP) {
+                        targetLocation.y = y + 1;
+                        if (character.direction != Location.LOCATION_DOWN) {
+                            speed_now = 0;
+                            character.InitImage();
+                            character.direction = Location.LOCATION_DOWN;
+                        }
+                        return true;
+                    }
+                }
+                break;
+        }
+        return false;
+    }
+
+    public Boolean FollowMove() {
+        int x = targetLocation.x;
+        int y = targetLocation.y;
+        boolean check;
+        for (Player player : map.players) {
+            int pX = (player.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            int direction[]={Location.LOCATION_TOP,Location.LOCATION_DOWN,Location.LOCATION_LEFT,Location.LOCATION_RIGHT};
+            for(int i=0;i<direction.length;i++){
+                int randomIndex=Common.RandomNum(4)-1;
+                int tmp=direction[i];
+                direction[i]=direction[randomIndex];
+                direction[randomIndex]=tmp;
+            }
+            for(int i=0;i<direction.length;i++){
+                check=FollowMoveTo(x,y,pX,pY,direction[i]);
+                if(check){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public Boolean CheckMove(int direction, Boolean noDanger) {
         int x = targetLocation.x;
         int y = targetLocation.y;
-        Boolean check = false;
+        Boolean check;
         switch (direction) {
             case Location.LOCATION_DOWN:
                 check = (CanMove(x, y + 1) && (!IsDanger(x, y + 1) || noDanger) && HaveExit(x, y + 1));
@@ -194,7 +279,52 @@ public class Ai extends Player {
         }
         return false;
     }
-
+    public void DefaultMove(int x,int y){
+        if (Common.RandomNum(10000)>8000&&CheckMove(character.direction, false)) {
+            return;
+        } else {
+            for (int i = 0; i < 3; i++) {
+                if (CheckMove(Location.RandomLocation(), false)) {
+                    return;
+                }
+            }
+        }
+        if (CheckMove(Location.LOCATION_TOP, false)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_RIGHT, false)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_LEFT, false)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_DOWN, false)) {
+            return;
+        }
+        if (!IsDanger(x, y)) {
+            IsMoving = false;
+            speed_now = 0;
+            return;
+        }
+        if (CheckMove(character.direction, true)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_TOP, true)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_RIGHT, true)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_LEFT, true)) {
+            return;
+        }
+        if (CheckMove(Location.LOCATION_DOWN, true)) {
+            return;
+        }
+        IsMoving = false;
+        speed_now = 0;
+        return;
+    }
     public void Move() {
         if (--mountDeadCounter > 0) {
             if (mount != null) {
@@ -221,61 +351,26 @@ public class Ai extends Player {
             switch (type) {
                 case IQ_10:
                     SetBomb();
-                    if(CheckBubbleMove()){
+                    if (CheckBubbleMove()) {
                         break;
                     }
                     if (CheckItemMove()) {
                         break;
                     }
-                    if (Common.RandomNum(2000) >= 1600) {
-                        if (CheckMove(character.direction, false)) {
-                            haveMove = true;
-                        }
-                    } else {
-                        for (int i = 0; i < 3; i++) {
-                            if (CheckMove(Location.RandomLocation(), false)) {
-                                haveMove = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (haveMove) {
+                    DefaultMove(x,y);
+                    break;
+                case IQ_30:
+                    SetBomb();
+                    if (CheckBubbleMove()) {
                         break;
                     }
-                    if (CheckMove(Location.LOCATION_TOP, false)) {
+                    if (CheckItemMove()) {
                         break;
                     }
-                    if (CheckMove(Location.LOCATION_RIGHT, false)) {
+                    if (FollowMove()) {
                         break;
                     }
-                    if (CheckMove(Location.LOCATION_LEFT, false)) {
-                        break;
-                    }
-                    if (CheckMove(Location.LOCATION_DOWN, false)) {
-                        break;
-                    }
-                    if (!IsDanger(x, y)) {
-                        IsMoving = false;
-                        speed_now = 0;
-                        break;
-                    }
-                    if (CheckMove(character.direction, true)) {
-                        break;
-                    }
-                    if (CheckMove(Location.LOCATION_TOP, true)) {
-                        break;
-                    }
-                    if (CheckMove(Location.LOCATION_RIGHT, true)) {
-                        break;
-                    }
-                    if (CheckMove(Location.LOCATION_LEFT, true)) {
-                        break;
-                    }
-                    if (CheckMove(Location.LOCATION_DOWN, true)) {
-                        break;
-                    }
-                    IsMoving = false;
-                    speed_now = 0;
+                    DefaultMove(x,y);
                     break;
                 case GOAST:
                     if (Common.RandomNum(2000) >= 1990) {
@@ -299,7 +394,7 @@ public class Ai extends Player {
         }
         SetMountMove();
         //這裡是Player.Move()的Copy版
-        if(emotion!=null){
+        if (emotion != null) {
             emotion.Play();
         }
         if (IsMoving && !IsDead) {
@@ -483,7 +578,7 @@ public class Ai extends Player {
     }
 
     public Boolean IsDanger(int x, int y) {
-        map.bombLock=true;
+        map.bombLock = true;
         for (MapObject mapObject : map.bombs) {
             if (x == mapObject.location.x) {
                 if (Math.abs(y - mapObject.location.y) <= mapObject.power) {
@@ -495,7 +590,7 @@ public class Ai extends Player {
                 }
             }
         }
-        map.bombLock=false;
+        map.bombLock = false;
         for (Explosion explosion : map.explosions) {
             if (x == explosion.location.x && y == explosion.location.y) {
                 if (!explosion.IsEnd) {
@@ -557,8 +652,8 @@ public class Ai extends Player {
                 }
             } else if (HaveEnemy(x, y)) {
                 InitBomb(x, y);
-            }else{
-                if(Common.RandomNum(10000)<80){
+            } else {
+                if (Common.RandomNum(10000) < 80) {
                     InitBomb(x, y);
                 }
             }
@@ -571,12 +666,12 @@ public class Ai extends Player {
             int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             if (pX == x && pY == y) {
                 return true;
-            }else if(pX==x){
-                if(wb_power>=Math.abs(y-pY)){
+            } else if (pX == x) {
+                if (wb_power >= Math.abs(y - pY)) {
                     return true;
                 }
-            }else if(pY==y){
-                if(wb_power>=Math.abs(x-pX)){
+            } else if (pY == y) {
+                if (wb_power >= Math.abs(x - pX)) {
                     return true;
                 }
             }
@@ -585,27 +680,28 @@ public class Ai extends Player {
     }
 
     public Boolean HaveExit(int x, int y) {
+        int exitCount = 0;
         if (x > 0) {
             if (map.mapObstacles[x - 1][y] <= 0) {
-                return true;
+                exitCount++;
             }
         }
         if (y > 0) {
             if (map.mapObstacles[x][y - 1] <= 0) {
-                return true;
+                exitCount++;
             }
         }
         if (x < Common.MAP_WIDTH_UNIT - 1) {
             if (map.mapObstacles[x + 1][y] <= 0) {
-                return true;
+                exitCount++;
             }
         }
         if (y < Common.MAP_HEIGHT_UNIT - 1) {
             if (map.mapObstacles[x][y + 1] <= 0) {
-                return true;
+                exitCount++;
             }
         }
-        return false;
+        return exitCount >= 1;
     }
 
     public Boolean HaveBox(int x, int y) {

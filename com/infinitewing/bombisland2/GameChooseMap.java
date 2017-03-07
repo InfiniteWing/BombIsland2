@@ -57,8 +57,9 @@ public class GameChooseMap extends Activity {
                 for (final Map map : mapLists) {
                     if (map.id.equals(nowMap)) {
                         String message = "";
-                        message += "請問是否購買本地圖(" + map.title + ")\n" +
-                                "地圖售價 $" + map.price + "，您目前持有 $" + money;
+                        message += Common.getStringResourceByName("game_choose_map_buy_message01",getApplicationContext())+ "?\n" +
+                                Common.getStringResourceByName("game_choose_map_buy_message02",getApplicationContext()) + map.price +
+                                Common.getStringResourceByName("game_choose_map_buy_message03",getApplicationContext()) + money;
                         new AlertDialog.Builder(GameChooseMap.this)
                                 .setTitle(R.string.game_choose_map_buy_title)
                                 .setMessage(message)
