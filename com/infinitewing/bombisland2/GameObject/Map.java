@@ -24,25 +24,27 @@ import java.util.Vector;
  */
 public class Map {
     public Vector<MapObject> mapObjects;
-    public Vector<MapObject> addMapObjects;
+    public Vector<MapObject> mapItems;
     public Vector<MapObject> removeMapObjects;
     public Vector<MapObject> mapFlyingObjects;
     public Vector<MapObject> bombs;
+    public HashMap<Integer, MapObject> bombsHashMap;
     public Vector<MapObject> centerObjects;
     public Vector<Explosion> explosions;
     public Vector<Explosion> removeExplosions;
     public Vector<Player> players;
     public Vector<Ai> ais;
+    public FlyingShip flyingShip;
     public Vector<Location> startLocations;
     public Vector<Location> explosionLocations;
     public HashMap<String, MapObject> itemCaches;
     public HashMap<String, Bitmap> imageCaches;
-    public int[][] mapObstacles;
+    public int[][] mapObstacles, explosionDP, willExplosionDP;
     public String id, playerID1, playerID2, playerUID;
     public String BGM, title, intro;
     public Vector<String> aiInfos;
-    public int MaxPlayer=0, aiCount, autoBombCounter = 0, price;
-    public boolean haveAI = false,bombLock=false;
+    public int MaxPlayer = 0, aiCount, autoBombCounter = 0, price;
+    public boolean haveAI = false, bombLock = false;
 
     public Map(String id, Context c) {
         this.id = id;
@@ -73,17 +75,18 @@ public class Map {
 
     public void Init(Boolean BT_MODE, Boolean IS_SERVER) {
         mapObjects = new Vector<>();
-        addMapObjects = new Vector<>();
+        mapItems = new Vector<>();
         removeMapObjects = new Vector<>();
-        mapFlyingObjects=new Vector<>();
+        mapFlyingObjects = new Vector<>();
         centerObjects = new Vector<>();
         explosions = new Vector<>();
-        removeExplosions=new Vector<>();
+        removeExplosions = new Vector<>();
         players = new Vector<>();
         bombs = new Vector<>();
+        bombsHashMap = new HashMap<>();
         ais = new Vector<>();
         startLocations = new Vector<>();
-        explosionLocations=new Vector<>();
+        explosionLocations = new Vector<>();
         imageCaches = new HashMap<>();
         itemCaches = new HashMap<>();
 
@@ -106,6 +109,29 @@ public class Map {
         for (int x = 0; x < Common.MAP_WIDTH_UNIT; x++) {
             for (int y = 0; y < Common.MAP_HEIGHT_UNIT; y++) {
                 mapObstacles[x][y] = 0;
+            }
+        }
+        InitDP();
+    }
+
+    public void SetBombsHashMap() {
+        bombsHashMap.clear();
+        for (MapObject bomb : bombs) {
+            bombsHashMap.put(bomb.location.y * Common.MAP_WIDTH_UNIT + bomb.location.x, bomb);
+        }
+    }
+
+    public void InitDP() {
+        explosionDP = new int[Common.MAP_WIDTH_UNIT][Common.MAP_HEIGHT_UNIT];
+        willExplosionDP = new int[Common.MAP_WIDTH_UNIT][Common.MAP_HEIGHT_UNIT];
+        ResetDP();
+    }
+
+    public void ResetDP() {
+        for (int x = 0; x < Common.MAP_WIDTH_UNIT; x++) {
+            for (int y = 0; y < Common.MAP_HEIGHT_UNIT; y++) {
+                explosionDP[x][y] = 0;
+                willExplosionDP[x][y] = 0;
             }
         }
     }
@@ -217,7 +243,70 @@ public class Map {
         source = Bitmap.createBitmap(source, 0, 0,
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("tree1.png", source);
+
+        source = Common.getBitmapFromAsset("map/swords.png");
+        matrix.reset();
+        width = (float) (1.4 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        height = (float) (1.4 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("swords.png", source);
+
+        source = Common.getBitmapFromAsset("map/total_exp.png");
+        matrix.reset();
+        width = (float) (1.2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        height = (float) (1.2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("total_exp.png", source);
+
+        source = Common.getBitmapFromAsset("map/total_coins.png");
+        matrix.reset();
+        width = (float) (1.2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        height = (float) (1.2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("total_coins.png", source);
+        //死鬥模式用的
+        for (int i = 0; i < 10; i++) {
+            source = Common.getBitmapFromAsset("number/icon18" + i + ".png");
+            matrix = new Matrix();
+            matrix.reset();
+            width = (float) (0.7 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+            height = (float) (0.7 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+            matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+            source = Bitmap.createBitmap(source, 0, 0,
+                    source.getWidth(), source.getHeight(), matrix, false);
+            imageCaches.put("number" + i + ".png", source);
+        }
+        source = Common.getBitmapFromAsset("number/colon.png");
+        matrix = new Matrix();
+        matrix.reset();
+        width = (float) (0.7 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        height = (float) (0.7 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("colon.png", source);
+
+
+        source = Common.getBitmapFromAsset("number/add.png");
+        matrix = new Matrix();
+        matrix.reset();
+        width = (float) (0.7 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        height = (float) (0.7 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("add.png", source);
     }
+
     public void InitMapGrass(String grassID) {
         Bitmap source = Common.getBitmapFromAsset("map/" + grassID);
         Matrix matrix = new Matrix();
@@ -306,7 +395,7 @@ public class Map {
                 break;
             }
             if (y < Common.MAP_HEIGHT_UNIT) {
-                for (int x = 0; x < line.length();x++ ) {
+                for (int x = 0; x < line.length(); x++) {
                     switch (line.charAt(x)) {
                         case 'Ｓ'://Player Start Point
                             MaxPlayer++;
@@ -319,11 +408,11 @@ public class Map {
                 String tag = line.split(":")[0], value = line.split(":")[1];
                 if (tag.equals("TITLE")) {
                     title = value;
-                    title = Common.getStringResourceByName("map_info_title_"+id,c);
+                    title = Common.getStringResourceByName("map_info_title_" + id, c);
                 }
                 if (tag.equals("INTRO")) {
                     intro = value;
-                    intro = Common.getStringResourceByName("map_info_intro_"+id,c);
+                    intro = Common.getStringResourceByName("map_info_intro_" + id, c);
                 }
             }
             if (line.length() > 10) {
@@ -487,13 +576,13 @@ public class Map {
         Ai ai;
         player = new Player(playerID1, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
         player.uid = playerUID;
-        player.teamID=1;
-        if(BT_MODE) {
+        player.teamID = 1;
+        if (BT_MODE) {
             if (IS_SERVER)
                 player.InitEmotion("emotion_player");
             else
                 player.InitEmotion("emotion_ai");
-        }else{
+        } else {
             player.InitEmotion("emotion_player");
         }
 
@@ -508,8 +597,8 @@ public class Map {
             }
             player = new Player(playerID2, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
             player.uid = player.id + "_2";
-            player.teamID=2;
-            if(IS_SERVER)
+            player.teamID = 2;
+            if (IS_SERVER)
                 player.InitEmotion("emotion_ai");
             else
                 player.InitEmotion("emotion_player");
@@ -526,10 +615,7 @@ public class Map {
                         break;
                     }
                 }
-                int aiLevel=Ai.IQ_10;
-                if(Common.RandomNum(1000)>800){
-                    aiLevel=Ai.IQ_30;
-                }
+                int aiLevel = Ai.IQ_30;
                 ai = new Ai(aiInfos.elementAt(aiIndex++), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
                 ai.InitEmotion("emotion_ai");
                 ais.add(ai);
@@ -540,14 +626,17 @@ public class Map {
     }
 
     public MapObject GetBomb(int x, int y) {
-        bombLock=true;
+        /*
+        bombLock = true;
         for (MapObject mapObject : bombs) {
             if (mapObject.location.x == x && mapObject.location.y == y) {
                 return mapObject;
             }
         }
-        bombLock=false;
+        bombLock = false;
         return null;
+        */
+        return bombsHashMap.get(y * Common.MAP_WIDTH_UNIT + x);
     }
 
     public Boolean FindMapObject(int x, int y, int direction) {
@@ -588,15 +677,105 @@ public class Map {
         }
         return false;
     }
-    public void DrawFPS(Canvas canvas){
-        float startX = 10, startY = 10;
+
+    public void DrawNowKill(Canvas canvas) {
+        canvas.drawBitmap(imageCaches.get("swords.png"), Common.transWidth(10), Common.transHeight(10), null);
+        float startX, startY, offsetX;
+        offsetX = (float) (0.74 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startX = (float) (1.5 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT) + Common.transWidth(5);
+        startY = (float) (0.35 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT) + Common.transHeight(10);
+        String totalKill = String.valueOf(Common.gameView.AiDeadCounter);
+        for (int i = 0; i < totalKill.length(); i++) {
+            char num = totalKill.charAt(i);
+            canvas.drawBitmap(imageCaches.get("number" + num + ".png"), startX + offsetX * i, startY, null);
+        }
+    }
+
+    public void DrawTotalTime(Canvas canvas) {
+        int totalTime;
+        if (Common.gameView.gameTime <= 75) {
+            totalTime = 0;
+        } else if (Common.gameView.gameThread.endTime != -1) {
+            totalTime = (int) ((Common.gameView.gameThread.endTime - Common.gameView.gameThread.startTime) / 1000);
+        } else {
+            totalTime = (int) ((System.currentTimeMillis() - Common.gameView.gameThread.startTime) / 1000);
+        }
+        String totalTimeStr = String.valueOf(totalTime / 60);
+        totalTimeStr += ":";
+        totalTimeStr += String.format("%02d", totalTime % 60);
+        float startX, startY, offsetX;
+        offsetX = (float) (0.74 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startX = (float) Common.gameView.screenWidth - Common.transWidth(5);
+        startX -= offsetX * totalTimeStr.length();
+        startY = (float) (0.35 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT) + Common.transHeight(10);
+        for (int i = 0; i < totalTimeStr.length(); i++) {
+            char num = totalTimeStr.charAt(i);
+            if (num == ':') {
+                canvas.drawBitmap(imageCaches.get("colon.png"), startX + offsetX * i, startY, null);
+            } else {
+                canvas.drawBitmap(imageCaches.get("number" + num + ".png"), startX + offsetX * i, startY, null);
+            }
+        }
+    }
+
+    public void DrawTotalExp(Canvas canvas) {
+
+        float startX, startY, offsetX;
+        startX = (float) (8 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startY = (float) (7.5 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        canvas.drawBitmap(imageCaches.get("total_exp.png"), startX, startY, null);
+
+        String totalExp = "+" + String.valueOf(Common.gameView.getExp);
+        offsetX = (float) (0.74 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startX = (float) (9.3 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startY = (float) (7.75 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        for (int i = 0; i < totalExp.length(); i++) {
+            char num = totalExp.charAt(i);
+            if (num == '+') {
+                canvas.drawBitmap(imageCaches.get("add.png"), startX + offsetX * i, startY, null);
+            } else {
+                canvas.drawBitmap(imageCaches.get("number" + num + ".png"), startX + offsetX * i, startY, null);
+            }
+        }
+    }
+
+    public void DrawTotalMoney(Canvas canvas) {
+
+        float startX, startY, offsetX;
+        startX = (float) (8 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startY = (float) (9.1 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        canvas.drawBitmap(imageCaches.get("total_coins.png"), startX, startY, null);
+
+        String totalExp = "+" + String.valueOf(Common.gameView.getMoney);
+        offsetX = (float) (0.74 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startX = (float) (9.3 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT);
+        startY = (float) (9.35 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
+        for (int i = 0; i < totalExp.length(); i++) {
+            char num = totalExp.charAt(i);
+            if (num == '+') {
+                canvas.drawBitmap(imageCaches.get("add.png"), startX + offsetX * i, startY, null);
+            } else {
+                canvas.drawBitmap(imageCaches.get("number" + num + ".png"), startX + offsetX * i, startY, null);
+            }
+        }
+    }
+
+    public void Release() {
+        for (String key : imageCaches.keySet()) {
+            imageCaches.get(key).recycle();
+        }
+        System.gc();
+    }
+
+    public void DrawFPS(Canvas canvas) {
+        float startX = 10, startY = ((Common.GAME_HEIGHT_UNIT - 1) * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT);
         float height = 30;
         float width = 240;
         float offsetY = 5;
         float fontSize = 26;
         float strokeWidth = 1;
         startX = Common.transWidth(startX);
-        startY = Common.transHeight(startY);
+        startY += Common.transHeight(10);
         width = Common.transWidth(width);
         height = Common.transHeight(height);
         offsetY = Common.transHeight(offsetY);
@@ -629,11 +808,15 @@ public class Map {
             paint.setAlpha(228);
             paint.setColor(Color.rgb(82, 92, 109));
             float FPS = (1000 / Common.gameView.sleep);
-                DecimalFormat df = new DecimalFormat("#.##");
-                canvas.drawText(df.format(FPS), startX + width / 2, startY + offsetY * i + fontSize, paint);
+            DecimalFormat df = new DecimalFormat("#.##");
+            canvas.drawText(df.format(FPS), startX + width / 2, startY + offsetY * i + fontSize, paint);
         }
     }
+
     public void Explosion(Location location) {
+        for (MapObject mapObject : mapItems) {
+            mapObject.Explosion(location);
+        }
         for (MapObject mapObject : mapObjects) {
             mapObject.Explosion(location);
         }

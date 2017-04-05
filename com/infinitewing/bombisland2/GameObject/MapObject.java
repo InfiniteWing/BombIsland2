@@ -18,7 +18,7 @@ import java.util.Vector;
 public class MapObject {
     public static final int TYPE_OTHER = 1, TYPE_ITEM = 2,
             TYPE_DESTROYABLE = 3, TYPE_DESTROYABLE_MOVABLE = 4,
-            TYPE_BOMB = 5, TYPE_CENTER_OBJ = 6;
+            TYPE_BOMB = 5, TYPE_CENTER_OBJ = 6,TYPE_EMOTION=7;
     public Location location, startLocation;
     public Animation animation;
     public int type;
@@ -129,7 +129,7 @@ public class MapObject {
     }
 
     public void Draw(Canvas canvas) {
-        if(animation.img==null){
+        if (animation.img == null) {
             animation.InitImage();
         }
         if (!IsEnd) {
@@ -159,7 +159,7 @@ public class MapObject {
     }
 
     public void Draw(int x, int y, Canvas canvas) {
-        if(animation.img==null){
+        if (animation.img == null) {
             animation.InitImage();
         }
         int tmp_x = x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
@@ -308,6 +308,9 @@ public class MapObject {
         if (!IsEnd) {
             itemInvincible--;
             animation.Play();
+            if (type == TYPE_BOMB) {
+                UpdateWillExplosionDP();
+            }
             if (animation.IsEnd() && !animation.loop) {
                 if (type == TYPE_BOMB) {
                     try {
@@ -320,6 +323,59 @@ public class MapObject {
         }
     }
 
+    public void UpdateWillExplosionDP() {
+        map.willExplosionDP[location.x][location.y] = 1;
+        for (int x = location.x; x >= 0 && x >= location.x - power; x--) {
+            if (x == location.x) {
+                continue;
+            }
+            if (map.mapObstacles[x][location.y] == 2) {
+                map.willExplosionDP[x][location.y] = 1;
+                break;
+            } else if (map.mapObstacles[x][location.y] == 1) {
+                break;
+            }
+            map.willExplosionDP[x][location.y] = 1;
+        }
+        for (int x = location.x; x < Common.MAP_WIDTH_UNIT && x <= location.x + power; x++) {
+            if (x == location.x) {
+                continue;
+            }
+            if (map.mapObstacles[x][location.y] == 2) {
+                map.willExplosionDP[x][location.y] = 1;
+                break;
+            } else if (map.mapObstacles[x][location.y] == 1) {
+                break;
+            }
+            map.willExplosionDP[x][location.y] = 1;
+        }
+
+        for (int y = location.y; y < Common.MAP_HEIGHT_UNIT && y <= location.y + power; y++) {
+            if (y == location.y) {
+                continue;
+            }
+            if (map.mapObstacles[location.x][y] == 2) {
+                map.willExplosionDP[location.x][y] = 1;
+                break;
+            } else if (map.mapObstacles[location.x][y] == 1) {
+                break;
+            }
+            map.willExplosionDP[location.x][y] = 1;
+        }
+        for (int y = location.y; y >= 0 && y >= location.y - power; y--) {
+            if (y == location.y) {
+                continue;
+            }
+            if (map.mapObstacles[location.x][y] == 2) {
+                map.willExplosionDP[location.x][y] = 1;
+                break;
+            } else if (map.mapObstacles[location.x][y] == 1) {
+                break;
+            }
+            map.willExplosionDP[location.x][y] = 1;
+        }
+    }
+
     public void Explosion(Location location) {
         if (!IsEnd) {
             try {
@@ -327,7 +383,7 @@ public class MapObject {
                     if (type == MapObject.TYPE_DESTROYABLE || type == MapObject.TYPE_DESTROYABLE_MOVABLE) {
                         if (item != null) {
                             map.mapObstacles[location.x][location.y] = -1;
-                            map.addMapObjects.add(item);
+                            map.mapItems.add(item);
                         } else {
                             map.mapObstacles[location.x][location.y] = 0;
                         }

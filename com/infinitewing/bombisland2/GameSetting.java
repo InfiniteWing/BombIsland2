@@ -1,4 +1,5 @@
 package com.infinitewing.bombisland2;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,17 +18,19 @@ import com.infinitewing.bombisland2.GameObject.Common;
 
 import java.io.IOException;
 import java.util.Set;
+
 /**
  * Created by Administrator on 2017/2/2.
  */
 public class GameSetting extends Activity {
-    private boolean BGM, effSound, effVibrator,FPS,bitmapOpt;
-    private int controlMode;
+    private boolean BGM, effSound, effVibrator, FPS, bitmapOpt;
+    private int controlMode, resolutionMode;
     private SharedPreferences sp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.SetFullScreen(getWindow());
         setContentView(R.layout.content_game_setting);
 
         sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
@@ -37,19 +40,26 @@ public class GameSetting extends Activity {
         FPS = sp.getBoolean("FPS", false);
         bitmapOpt = sp.getBoolean("bitmapOpt", false);
         controlMode = sp.getInt("controlMode", 0);
+        resolutionMode = sp.getInt("resolutionMode", 2);
         ((Switch) findViewById(R.id.Setting_SW_1)).setChecked(BGM);
         ((Switch) findViewById(R.id.Setting_SW_2)).setChecked(effSound);
         ((Switch) findViewById(R.id.Setting_SW_3)).setChecked(effVibrator);
         ((Switch) findViewById(R.id.Setting_SW_4)).setChecked(FPS);
         ((Switch) findViewById(R.id.Setting_SW_5)).setChecked(bitmapOpt);
-        if(controlMode==0) {
+        if (controlMode == 0) {
             ((RadioGroup) findViewById(R.id.Setting_RG)).check(R.id.Setting_RB_1);
-        }
-        else if(controlMode==1) {
+        } else if (controlMode == 1) {
             ((RadioGroup) findViewById(R.id.Setting_RG)).check(R.id.Setting_RB_2);
-        }
-        else {
+        } else {
             ((RadioGroup) findViewById(R.id.Setting_RG)).check(R.id.Setting_RB_3);
+        }
+
+        if (resolutionMode == 0) {
+            ((RadioGroup) findViewById(R.id.Setting_ResolutionRG)).check(R.id.Setting_ResolutionRB_1);
+        } else if (resolutionMode == 1) {
+            ((RadioGroup) findViewById(R.id.Setting_ResolutionRG)).check(R.id.Setting_ResolutionRB_2);
+        } else {
+            ((RadioGroup) findViewById(R.id.Setting_ResolutionRG)).check(R.id.Setting_ResolutionRB_3);
         }
         findViewById(R.id.Setting_Submit).setOnClickListener(new ClickListener());
         findViewById(R.id.Setting_Submit).setOnTouchListener(new TouchListener());
@@ -62,19 +72,33 @@ public class GameSetting extends Activity {
         effSound = ((Switch) findViewById(R.id.Setting_SW_2)).isChecked();
         effVibrator = ((Switch) findViewById(R.id.Setting_SW_3)).isChecked();
         FPS = ((Switch) findViewById(R.id.Setting_SW_4)).isChecked();
-        bitmapOpt= ((Switch) findViewById(R.id.Setting_SW_5)).isChecked();
-        switch (((RadioGroup) findViewById(R.id.Setting_RG)).getCheckedRadioButtonId()){
+        bitmapOpt = ((Switch) findViewById(R.id.Setting_SW_5)).isChecked();
+        switch (((RadioGroup) findViewById(R.id.Setting_RG)).getCheckedRadioButtonId()) {
             case R.id.Setting_RB_1:
-                controlMode=0;
+                controlMode = 0;
                 break;
             case R.id.Setting_RB_2:
-                controlMode=1;
+                controlMode = 1;
                 break;
             case R.id.Setting_RB_3:
-                controlMode=2;
+                controlMode = 2;
                 break;
             default:
-                controlMode=0;
+                controlMode = 0;
+                break;
+        }
+        switch (((RadioGroup) findViewById(R.id.Setting_ResolutionRG)).getCheckedRadioButtonId()) {
+            case R.id.Setting_ResolutionRB_1:
+                resolutionMode = 0;
+                break;
+            case R.id.Setting_ResolutionRB_2:
+                resolutionMode = 1;
+                break;
+            case R.id.Setting_ResolutionRB_3:
+                resolutionMode = 2;
+                break;
+            default:
+                resolutionMode = 2;
                 break;
         }
         SharedPreferences.Editor spEditor;
@@ -83,8 +107,9 @@ public class GameSetting extends Activity {
                 .putBoolean("effSound", effSound)
                 .putBoolean("effVibrator", effVibrator)
                 .putBoolean("FPS", FPS)
-                .putBoolean("bitmapOpt",bitmapOpt)
-                .putInt("controlMode", controlMode).commit();
+                .putBoolean("bitmapOpt", bitmapOpt)
+                .putInt("controlMode", controlMode)
+                .putInt("resolutionMode", resolutionMode).commit();
         Toast.makeText(getApplicationContext(), "保存成功", Toast.LENGTH_SHORT).show();
         GameSetting.this.finish();
     }
@@ -115,5 +140,11 @@ public class GameSetting extends Activity {
             }
             return false;
         }
+    }
+
+    @Override
+    protected void onResume() {
+        Common.SetFullScreen(getWindow());
+        super.onResume();
     }
 }

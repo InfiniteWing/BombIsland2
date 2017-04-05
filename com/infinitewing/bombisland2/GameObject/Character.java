@@ -102,57 +102,68 @@ public class Character {
         tmp_x /= Common.PLAYER_POSITION_RATE;
         tmp_y /= Common.PLAYER_POSITION_RATE;
         Paint alphaPaint = new Paint();
-
-        if (player.IsDead) {
-            if(player.IsMount) {
-                if(player.mountDeadCounter%6<=2) {
-                    alphaPaint.setAlpha(100);
-                    canvas.drawBitmap(img,
-                            tmp_x / Common.GAME_WIDTH_UNIT,
-                            tmp_y / Common.GAME_HEIGHT_UNIT,
-                            alphaPaint);
-                }else{
-                    alphaPaint.setAlpha(42);
-                    canvas.drawBitmap(img,
-                            tmp_x / Common.GAME_WIDTH_UNIT,
-                            tmp_y / Common.GAME_HEIGHT_UNIT,
-                            alphaPaint);
-                }
-            }else{
-                if(player.deadExplosion!=null){
-                    if(player.deadExplosion.IsEnd){
-                        return;
-                    }
-                    player.deadExplosion.Play();
-                    alphaPaint.setAlpha(80);
-                    canvas.drawBitmap(img,
-                            tmp_x / Common.GAME_WIDTH_UNIT,
-                            tmp_y / Common.GAME_HEIGHT_UNIT,
-                            alphaPaint);
-                    canvas.drawBitmap(player.deadExplosion.animation.img,
-                            tmp_x / Common.GAME_WIDTH_UNIT,
-                            tmp_y / Common.GAME_HEIGHT_UNIT,
-                            alphaPaint);
-                }
+        if (player.revivalCounter < 0) {
+            //死鬥模式下，快復活時人物會顯現
+            if (player.revivalCounter > -85) {
+                alphaPaint.setAlpha(255 + player.revivalCounter * 3);
+                canvas.drawBitmap(img,
+                        tmp_x / Common.GAME_WIDTH_UNIT,
+                        tmp_y / Common.GAME_HEIGHT_UNIT,
+                        alphaPaint);
             }
-        }else if(player.IsBubbled){
-            alphaPaint.setAlpha(80);
-            canvas.drawBitmap(img,
-                    tmp_x / Common.GAME_WIDTH_UNIT,
-                    tmp_y / Common.GAME_HEIGHT_UNIT,
-                    alphaPaint);
-            canvas.drawBitmap(map.imageCaches.get("bubble01.png"),
-                    tmp_x / Common.GAME_WIDTH_UNIT,
-                    tmp_y / Common.GAME_HEIGHT_UNIT,
-                    alphaPaint);
         } else {
-            if(img==null){
-                InitImage();
+            if (player.IsDead) {
+                if (player.IsMount) {
+                    if (player.mountDeadCounter % 6 <= 2) {
+                        alphaPaint.setAlpha(120);
+                        canvas.drawBitmap(img,
+                                tmp_x / Common.GAME_WIDTH_UNIT,
+                                tmp_y / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                    } else {
+                        alphaPaint.setAlpha(55);
+                        canvas.drawBitmap(img,
+                                tmp_x / Common.GAME_WIDTH_UNIT,
+                                tmp_y / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                    }
+                } else {
+                    if (player.deadExplosion != null) {
+                        if (player.deadExplosion.IsEnd) {
+                            return;
+                        }
+                        player.deadExplosion.Play();
+                        alphaPaint.setAlpha(100);
+                        canvas.drawBitmap(img,
+                                tmp_x / Common.GAME_WIDTH_UNIT,
+                                tmp_y / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                        canvas.drawBitmap(player.deadExplosion.animation.img,
+                                tmp_x / Common.GAME_WIDTH_UNIT,
+                                tmp_y / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                    }
+                }
+            } else if (player.IsBubbled) {
+                alphaPaint.setAlpha(140);
+                canvas.drawBitmap(img,
+                        tmp_x / Common.GAME_WIDTH_UNIT,
+                        tmp_y / Common.GAME_HEIGHT_UNIT,
+                        alphaPaint);
+                alphaPaint.setAlpha(120);
+                canvas.drawBitmap(map.imageCaches.get("bubble01.png"),
+                        tmp_x / Common.GAME_WIDTH_UNIT,
+                        tmp_y / Common.GAME_HEIGHT_UNIT,
+                        alphaPaint);
+            } else {
+                if (img == null) {
+                    InitImage();
+                }
+                canvas.drawBitmap(img,
+                        tmp_x / Common.GAME_WIDTH_UNIT,
+                        tmp_y / Common.GAME_HEIGHT_UNIT,
+                        null);
             }
-            canvas.drawBitmap(img,
-                    tmp_x / Common.GAME_WIDTH_UNIT,
-                    tmp_y / Common.GAME_HEIGHT_UNIT,
-                    null);
         }
     }
 }

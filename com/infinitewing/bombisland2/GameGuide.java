@@ -9,6 +9,8 @@ import android.view.View;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.infinitewing.bombisland2.GameObject.Common;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -20,8 +22,9 @@ public class GameGuide extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.SetFullScreen(getWindow());
         setContentView(R.layout.game_guide);
-        newbe=getIntent().getBooleanExtra("newbe",false);
+        newbe = getIntent().getBooleanExtra("newbe", false);
         guide = getIntent().getStringExtra("guide");
         if (!newbe) {
             guide = "game";
@@ -30,8 +33,7 @@ public class GameGuide extends Activity {
             findViewById(R.id.Guide_Map).setOnClickListener(new ClickListener());
             findViewById(R.id.Guide_Bluetooth).setOnClickListener(new ClickListener());
             findViewById(R.id.Guide_Game).setOnClickListener(new ClickListener());
-        }
-        else{
+        } else {
             findViewById(R.id.Guide_TitleTV).setVisibility(View.GONE);
             findViewById(R.id.Guide_HeaderList).setVisibility(View.GONE);
         }
@@ -56,9 +58,9 @@ public class GameGuide extends Activity {
                 break;
         }
         String language = Locale.getDefault().getLanguage();
-        if(language.equals("zh")) {
+        if (language.equals("zh")) {
             ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/" + guide + ".html");
-        }else{
+        } else {
             ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/en/" + guide + ".html");
         }
     }
@@ -89,5 +91,11 @@ public class GameGuide extends Activity {
             }
             LoadWebView();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        Common.SetFullScreen(getWindow());
+        super.onResume();
     }
 }

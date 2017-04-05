@@ -7,13 +7,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.games.Games;
+import com.google.android.gms.games.event.Event;
+import com.google.android.gms.games.event.Events;
 import com.infinitewing.bombisland2.GameObject.Common;
 import com.infinitewing.bombisland2.GameObject.Map;
 import com.infinitewing.bombisland2.GameObject.Player;
@@ -28,7 +38,7 @@ import java.util.Vector;
 public class GameVersusAi extends Activity {
     private Intent intent;
     private Resources res;
-    public int AiCount = 1,maxPlayer=8;
+    public int AiCount = 1, maxPlayer = 8;
     public Vector<ImageView> imageViews;
     public Vector<TextView> addTVs, removeTVs;
     public Vector<LinearLayout> linearLayouts;
@@ -36,12 +46,14 @@ public class GameVersusAi extends Activity {
     public Boolean aiOns[];
     public Player aiNull;
     public String hero, map;
-    public MediaPlayer gamebackgroundsound;
     public Boolean BGM;
+    public GoogleApiClient mGoogleApiClient;
+    public String mSaveGameData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.SetFullScreen(getWindow());
         setContentView(R.layout.game_versus_ai);
         SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
         BGM = sp.getBoolean("BGM", true);
@@ -64,17 +76,12 @@ public class GameVersusAi extends Activity {
 
         aiNull = new Player("ai_null", getApplicationContext());
         aiOns = new Boolean[7];
-        for(int i=0;i<7;i++){
-            aiOns[i]=false;
+        for (int i = 0; i < 7; i++) {
+            aiOns[i] = false;
         }
         map = "bombisland01";
-        hero=sp.getString("Last_Pick_Hero","ai01");
-        if(BGM) {
-            gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
-            gamebackgroundsound.setVolume(0.3f, 0.3f);
-            gamebackgroundsound.setLooping(true);
-            gamebackgroundsound.start();
-        }
+        hero = sp.getString("Last_Pick_Hero", "ai01");
+        PlayBGM();
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV1));
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV2));
         imageViews.add((ImageView) findViewById(R.id.GameVersusAi_IV3));
@@ -117,6 +124,7 @@ public class GameVersusAi extends Activity {
         }
 
         findViewById(R.id.GameVersusAi_Submit).setOnClickListener(new ClickListener());
+        findViewById(R.id.GameVersusAi_Back).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_ChooseMapTV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_PlayerIV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_Guide).setOnClickListener(new ClickListener());
@@ -127,21 +135,45 @@ public class GameVersusAi extends Activity {
         LoadHero();
         LoadMap();
 
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        mGoogleApiClient = null;
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(ConnectionResult connectionResult) {
+                        mGoogleApiClient = null;
+                    }
+                })
+                .addApi(Games.API).addScope(Games.SCOPE_GAMES)
+                .addApi(Drive.API).addScope(Drive.SCOPE_APPFOLDER)
+                .build();
+        mGoogleApiClient.connect();
         //判斷需不需要新手提示
         sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
-        if(!sp.getBoolean("Guide_AI",false)){
+        if (!sp.getBoolean("Guide_AI", false)) {
             ShowGuide();
             SharedPreferences.Editor spEditor;
             spEditor = sp.edit();
             spEditor.putBoolean("Guide_AI", true).commit();
         }
     }
-    public void ShowGuide(){
+
+    public void ShowGuide() {
         Intent intent = new Intent(GameVersusAi.this, GameGuide.class);
         intent.putExtra("guide", "ai");
         intent.putExtra("newbe", true);
         startActivity(intent);
     }
+
     public class ClickListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
@@ -216,7 +248,9 @@ public class GameVersusAi extends Activity {
                     intent.putExtra("map", map);
                     startActivityForResult(intent, 1);
                     break;
-
+                case R.id.GameVersusAi_Back:
+                    GameVersusAi.this.finish();
+                    break;
                 case R.id.GameVersusAi_Submit:
                     intent = new Intent(GameVersusAi.this, GameMain.class);
                     intent.putExtra("hero", hero);
@@ -234,16 +268,13 @@ public class GameVersusAi extends Activity {
                         }
                     }
                     intent.putExtra("ai_info", ai_info);
-                    startActivity(intent);
+                    startActivityForResult(intent, 8888);
 
                     SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
                     SharedPreferences.Editor spEditor;
                     spEditor = sp.edit();
                     spEditor.putString("Last_Pick_Hero", hero).commit();
 
-                    if(gamebackgroundsound!=null) {
-                        gamebackgroundsound.stop();
-                    }
                     break;
 
                 case R.id.GameVersusAi_PlayerIV:
@@ -263,12 +294,12 @@ public class GameVersusAi extends Activity {
 
     public void LoadMap() {
         //地圖人數限制
-        for(int i=0;i<8-maxPlayer;i++){
-            RemoveAi(i+maxPlayer-1);
-            addTVs.elementAt(i+maxPlayer-2).setVisibility(View.GONE);
+        for (int i = 0; i < 8 - maxPlayer; i++) {
+            RemoveAi(i + maxPlayer - 1);
+            addTVs.elementAt(i + maxPlayer - 2).setVisibility(View.GONE);
         }
-        for(int i=0;i<maxPlayer-2;i++){
-            if(!aiOns[i+1]){
+        for (int i = 0; i < maxPlayer - 2; i++) {
+            if (!aiOns[i + 1]) {
                 addTVs.elementAt(i).setVisibility(View.VISIBLE);
             }
         }
@@ -298,7 +329,7 @@ public class GameVersusAi extends Activity {
     }
 
     public void AddAi(int i) {
-        if(i+2>maxPlayer){
+        if (i + 2 > maxPlayer) {
             return;
         }
         aiOns[i] = true;
@@ -332,68 +363,97 @@ public class GameVersusAi extends Activity {
         return c;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(gamebackgroundsound!=null) {
-            gamebackgroundsound.start();
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            map = data.getStringExtra("map");
-            maxPlayer=data.getIntExtra("maxPlayer",4);
-            LoadMap();
-        }
-        if (requestCode == 2 && resultCode == RESULT_OK) {
-            hero = data.getStringExtra("hero");
-            LoadHero();
-        }
-        if (requestCode > 2 && resultCode == RESULT_OK) {
-            SetAi(requestCode - 3, data.getStringExtra("hero"));
-        }
-    }
-    public void PlayBGM(){
-        try {
-            if (BGM) {
-                if(gamebackgroundsound==null) {
-                    gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+    public void SaveGameToGoogle() {
+        AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
+            @Override
+            protected Integer doInBackground(Void... params) {
+                // Open the saved game using its name.
+                mSaveGameData = Common.GenerateSaveData(getApplicationContext());
+                try {
+                    Common.writeSnapshot(mGoogleApiClient, Common.APP_GOOGLE_UID, mSaveGameData.getBytes(),
+                            BitmapFactory.decodeResource(getResources(), R.drawable.savebg),
+                            Common.getStringResourceByName("app_name", getApplicationContext()));
+                } catch (Exception e) {
+                    e.getCause();
                 }
-                gamebackgroundsound.setVolume(0.3f, 0.3f);
-                gamebackgroundsound.setLooping(true);
-                if(!gamebackgroundsound.isPlaying()) {
-                    gamebackgroundsound.start();
-                }
+                return 1;
             }
-        }catch (Exception e){
+
+            @Override
+            protected void onPostExecute(Integer status) {
+            }
+        };
+        try {
+            task.execute();
+        } catch (Exception e) {
             e.getCause();
         }
     }
-    public void Pause(){
-        if(gamebackgroundsound!=null){
-            if(gamebackgroundsound.isPlaying()){
-                gamebackgroundsound.stop();
-            }
-            gamebackgroundsound.reset();
-            gamebackgroundsound.release();
-            gamebackgroundsound=null;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        try {
+            SaveGameToGoogle();
+        } catch (Exception e) {
+            e.getCause();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 8888) {
+
+        } else if (requestCode == 1 && resultCode == RESULT_OK) {
+            map = data.getStringExtra("map");
+            maxPlayer = data.getIntExtra("maxPlayer", 4);
+            LoadMap();
+        } else if (requestCode == 2 && resultCode == RESULT_OK) {
+            hero = data.getStringExtra("hero");
+            LoadHero();
+        } else if (requestCode > 2 && resultCode == RESULT_OK) {
+            SetAi(requestCode - 3, data.getStringExtra("hero"));
         }
     }
-    public void Restart(){
+
+    public void PlayBGM() {
+        /*
+        3.42版後先行移除
+        try {
+            if (BGM) {
+                if (gamebackgroundsound == null) {
+                    gamebackgroundsound = MediaPlayer.create(this, R.raw.bgm);
+                }
+                gamebackgroundsound.setVolume(0.3f, 0.3f);
+                gamebackgroundsound.setLooping(true);
+                if (!gamebackgroundsound.isPlaying()) {
+                    gamebackgroundsound.start();
+                }
+            }
+        } catch (Exception e) {
+            e.getCause();
+        }
+        */
+    }
+
+
+    public void Restart() {
         PlayBGM();
     }
+
     @Override
-    protected void onRestart(){
+    protected void onRestart() {
         Restart();
         super.onRestart();
     }
-    @Override
-    protected void onPause() {
-        Pause();
-        super.onPause();
-    }
+
+
     @Override
     protected void onDestroy() {
         GameVersusAi.this.finish();
-        Pause();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        Common.SetFullScreen(getWindow());
+        super.onResume();
     }
 }

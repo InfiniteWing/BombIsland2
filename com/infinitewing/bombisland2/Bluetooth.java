@@ -420,8 +420,25 @@ public class Bluetooth extends Activity {
 
         int width = x;
         int height = y;
-        Common.SCREEN_WIDTH = width;
-        Common.SCREEN_HEIGHT = height;
+        int settingWidth;
+        SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        int resolutionMode=sp.getInt("resolutionMode", 2);
+        if(resolutionMode==0){
+            settingWidth=800;
+        }else if(resolutionMode==1){
+            settingWidth=1024;
+        }else{
+            settingWidth=1280;
+        }
+        if (width < settingWidth) {
+            Common.SCREEN_WIDTH = width;
+            Common.SCREEN_HEIGHT = height;
+        } else {
+            Common.SCREEN_WIDTH = settingWidth;
+            Common.SCREEN_HEIGHT = (height * settingWidth) / width;
+        }
+        Common.OLD_SCREEN_WIDTH = width;
+        Common.OLD_SCREEN_HEIGHT = height;
     }
 
     private class GameListener extends BroadcastReceiver {
@@ -642,6 +659,26 @@ public class Bluetooth extends Activity {
             connectedThread.write(finish.getBytes());
             connectedThread.cancel();
         }
+        if (gameView != null) {
+            try {
+                if (gameView.gameThread != null) {
+                    gameView.gameThread.stop = true;
+                }
+                if (gameView.map != null) {
+                    gameView.map.Release();
+                }
+                if(gameView.soundManager!=null){
+                    gameView.soundManager.Stop();
+                }
+            } catch (Exception e) {
+                e.getCause();
+            }
+        }
+        try {
+            unregisterReceiver(gamelistener);
+        } catch (Exception e) {
+            e.getCause();
+        }
     }
 
     public void ErrorDestroy() {
@@ -778,10 +815,12 @@ public class Bluetooth extends Activity {
         }
     }
     public void PlayBGM(){
+        /*
+        3.42版後先行移除
         try {
             if (BGM) {
                 if(gamebackgroundsound==null) {
-                    gamebackgroundsound = MediaPlayer.create(this, R.raw.ai_choose);
+                    gamebackgroundsound = MediaPlayer.create(this, R.raw.bgm);
                 }
                 gamebackgroundsound.setVolume(0.3f, 0.3f);
                 gamebackgroundsound.setLooping(true);
@@ -792,15 +831,30 @@ public class Bluetooth extends Activity {
         }catch (Exception e){
             e.getCause();
         }
+        */
     }
     public void Pause(){
-        if(gamebackgroundsound!=null){
-            if(gamebackgroundsound.isPlaying()){
-                gamebackgroundsound.stop();
+        try {
+            if (gamebackgroundsound != null) {
+                if (gamebackgroundsound.isPlaying()) {
+                    gamebackgroundsound.stop();
+                }
+                gamebackgroundsound.reset();
+                gamebackgroundsound.release();
+                gamebackgroundsound = null;
             }
-            gamebackgroundsound.reset();
-            gamebackgroundsound.release();
-            gamebackgroundsound=null;
+            if(gameView!=null){
+                if (gameView.gamebackgroundsound != null) {
+                    if (gameView.gamebackgroundsound.isPlaying()) {
+                        gameView.gamebackgroundsound.stop();
+                    }
+                    gameView.gamebackgroundsound.reset();
+                    gameView.gamebackgroundsound.release();
+                    gameView.gamebackgroundsound = null;
+                }
+            }
+        }catch (Exception e){
+            e.getCause();
         }
     }
     public void Restart(){

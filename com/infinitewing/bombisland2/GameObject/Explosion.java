@@ -52,6 +52,10 @@ public class Explosion {
                     map.explosionLocations.add(location);
                     IsEnd = true;
                 }
+                map.explosionDP[location.x][location.y]=1;
+            }
+            else{
+                map.willExplosionDP[location.x][location.y]=1;
             }
             delay -= Common.GAME_REFRESH;
         }

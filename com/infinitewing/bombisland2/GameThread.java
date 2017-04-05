@@ -1,6 +1,8 @@
 package com.infinitewing.bombisland2;
 
 import android.graphics.Canvas;
+import android.os.*;
+import android.os.Process;
 import android.view.SurfaceHolder;
 
 import com.infinitewing.bombisland2.GameObject.Common;
@@ -11,7 +13,7 @@ import com.infinitewing.bombisland2.GameObject.Common;
 public class GameThread extends Thread {
     GameView gameView;
     SurfaceHolder surfaceholder;
-    long timestampBefore, timeDiff, sleep,lastDraw=System.currentTimeMillis();
+    public long timestampBefore, timeDiff, sleep,lastDraw=System.currentTimeMillis(),startTime,endTime=-1;
     boolean stop = false;
     boolean HadDraw = false;
     public GameThread(GameView gv, SurfaceHolder surfaceholder) {
@@ -21,6 +23,7 @@ public class GameThread extends Thread {
 
     public void run() {
         Canvas canvas = null;
+        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -28,6 +31,7 @@ public class GameThread extends Thread {
         }
         gameView.StartBGM();
         timestampBefore = System.currentTimeMillis();
+        startTime=System.currentTimeMillis();
         while (!stop) {
             try {
                 HadDraw = false;
@@ -38,7 +42,9 @@ public class GameThread extends Thread {
                                 HadDraw = true;
                                 canvas = surfaceholder.lockCanvas(null);
                                 gameView.Play();
-                                gameView.Draw(canvas);
+                                if(!stop) {
+                                    gameView.Draw(canvas);
+                                }
                             } else {
                                 int BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
                                 if (BTTimeDiff > 0 ) {
@@ -48,7 +54,9 @@ public class GameThread extends Thread {
                                         gameView.Play();
                                         BTTimeDiff = gameView.BTgameTime - gameView.gameTime;
                                     }
-                                    gameView.Draw(canvas);
+                                    if(!stop) {
+                                        gameView.Draw(canvas);
+                                    }
                                     lastDraw=System.currentTimeMillis();
                                 }
                             }
@@ -60,7 +68,9 @@ public class GameThread extends Thread {
                     HadDraw = true;
                     canvas = surfaceholder.lockCanvas(null);
                     gameView.Play();
-                    gameView.Draw(canvas);
+                    if(!stop) {
+                        gameView.Draw(canvas);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

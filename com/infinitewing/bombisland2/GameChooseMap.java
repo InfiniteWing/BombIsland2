@@ -33,11 +33,12 @@ public class GameChooseMap extends Activity {
     private Vector<Map> mapLists;
     private Vector<String> buyedMaps;
     private String nowMap;
-    private int money = 1000000,maxPlayer;
+    private int money = Common.DEFAULT_MONEY, maxPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.SetFullScreen(getWindow());
         setContentView(R.layout.game_choose_map);
         mapLists = new Vector<>();
         buyedMaps = new Vector<>();
@@ -51,18 +52,30 @@ public class GameChooseMap extends Activity {
                 ShowGuide();
             }
         });
+        findViewById(R.id.GameChooseMap_Back).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GameChooseMap.this.finish();
+            }
+        });
         findViewById(R.id.GameChooseMap_Buy).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 for (final Map map : mapLists) {
                     if (map.id.equals(nowMap)) {
                         String message = "";
-                        message += Common.getStringResourceByName("game_choose_map_buy_message01",getApplicationContext())+ "?\n" +
-                                Common.getStringResourceByName("game_choose_map_buy_message02",getApplicationContext()) + map.price +
-                                Common.getStringResourceByName("game_choose_map_buy_message03",getApplicationContext()) + money;
+                        message += Common.getStringResourceByName("game_choose_map_buy_message01", getApplicationContext()) + "?\n" +
+                                Common.getStringResourceByName("game_choose_map_buy_message02", getApplicationContext()) + map.price +
+                                Common.getStringResourceByName("game_choose_map_buy_message03", getApplicationContext()) + money;
                         new AlertDialog.Builder(GameChooseMap.this)
                                 .setTitle(R.string.game_choose_map_buy_title)
                                 .setMessage(message)
+                                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                    @Override
+                                    public void onCancel(DialogInterface dialog) {
+                                        Common.SetFullScreen(getWindow());
+                                    }
+                                })
                                 .setPositiveButton(R.string.game_choose_map_buy, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -76,9 +89,15 @@ public class GameChooseMap extends Activity {
                                         } else {
                                             Toast.makeText(getApplicationContext(), R.string.game_choose_map_buy_error, Toast.LENGTH_SHORT).show();
                                         }
+                                        Common.SetFullScreen(getWindow());
                                     }
                                 })
-                                .setNegativeButton(R.string.game_choose_map_buy_cancel, null)
+                                .setNegativeButton(R.string.game_choose_map_buy_cancel, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Common.SetFullScreen(getWindow());
+                                    }
+                                })
                                 .show();
                     }
                 }
@@ -98,7 +117,12 @@ public class GameChooseMap extends Activity {
         file = "money.bl2";
         String moneyRecord = recorder.Read(file);
         if (moneyRecord != null) {
-            money = Integer.parseInt(moneyRecord);
+            try {
+                money = Integer.parseInt(moneyRecord);
+            } catch (Exception e) {
+                e.getCause();
+                money = Common.DEFAULT_MONEY;
+            }
         }
     }
 
@@ -214,15 +238,22 @@ public class GameChooseMap extends Activity {
         }
         for (Map map : mapLists) {
             if (map.id.equals(nowMap)) {
-                ((TextView) findViewById(R.id.GameChooseMap_LimitTV)).setText((String)getText(R.string.game_choose_map_limit)+map.MaxPlayer);
-                maxPlayer=map.MaxPlayer;
+                ((TextView) findViewById(R.id.GameChooseMap_LimitTV)).setText((String) getText(R.string.game_choose_map_limit) + map.MaxPlayer);
+                maxPlayer = map.MaxPlayer;
             }
         }
     }
-    public void ShowGuide(){
+
+    public void ShowGuide() {
         Intent intent = new Intent(GameChooseMap.this, GameGuide.class);
         intent.putExtra("guide", "map");
         intent.putExtra("newbe", true);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        Common.SetFullScreen(getWindow());
+        super.onResume();
     }
 }

@@ -34,11 +34,12 @@ public class GameChooseHero extends Activity {
     private Vector<Player> heroLists;
     private String nowHero;
     private Vector<String> buyedHeros;
-    private int money = 1000000;
+    private int money = Common.DEFAULT_MONEY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Common.SetFullScreen(getWindow());
         setContentView(R.layout.game_choose_hero);
         heroLists = new Vector<>();
         buyedHeros = new Vector<>();
@@ -52,18 +53,30 @@ public class GameChooseHero extends Activity {
                 ShowGuide();
             }
         });
+        findViewById(R.id.GameChooseHero_Back).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GameChooseHero.this.finish();
+            }
+        });
         findViewById(R.id.GameChooseHero_Buy).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 for (final Player hero : heroLists) {
                     if (hero.id.equals(nowHero)) {
                         String message = "";
-                        message += Common.getStringResourceByName("game_choose_hero_buy_message01",getApplicationContext())+"?\n" +
-                                Common.getStringResourceByName("game_choose_hero_buy_message02",getApplicationContext()) + hero.price +".\n"+
-                                Common.getStringResourceByName("game_choose_hero_buy_message03",getApplicationContext()) + money+".";
+                        message += Common.getStringResourceByName("game_choose_hero_buy_message01", getApplicationContext()) + "?\n" +
+                                Common.getStringResourceByName("game_choose_hero_buy_message02", getApplicationContext()) + hero.price + ".\n" +
+                                Common.getStringResourceByName("game_choose_hero_buy_message03", getApplicationContext()) + money + ".";
                         new AlertDialog.Builder(GameChooseHero.this)
                                 .setTitle(R.string.game_choose_hero_buy_title)
                                 .setMessage(message)
+                                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                    @Override
+                                    public void onCancel(DialogInterface dialog) {
+                                        Common.SetFullScreen(getWindow());
+                                    }
+                                })
                                 .setPositiveButton(R.string.game_choose_hero_buy, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -77,9 +90,15 @@ public class GameChooseHero extends Activity {
                                         } else {
                                             Toast.makeText(getApplicationContext(), R.string.game_choose_hero_buy_error, Toast.LENGTH_SHORT).show();
                                         }
+                                        Common.SetFullScreen(getWindow());
                                     }
                                 })
-                                .setNegativeButton(R.string.game_choose_hero_buy_cancel, null)
+                                .setNegativeButton(R.string.game_choose_hero_buy_cancel, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Common.SetFullScreen(getWindow());
+                                    }
+                                })
                                 .show();
                     }
                 }
@@ -100,7 +119,12 @@ public class GameChooseHero extends Activity {
         file = "money.bl2";
         String moneyRecord = recorder.Read(file);
         if (moneyRecord != null) {
-            money = Integer.parseInt(moneyRecord);
+            try {
+                money = Integer.parseInt(moneyRecord);
+            } catch (Exception e) {
+                e.getCause();
+                money = Common.DEFAULT_MONEY;
+            }
         }
     }
 
@@ -226,10 +250,17 @@ public class GameChooseHero extends Activity {
             }
         }
     }
-    public void ShowGuide(){
+
+    public void ShowGuide() {
         Intent intent = new Intent(GameChooseHero.this, GameGuide.class);
         intent.putExtra("guide", "hero");
         intent.putExtra("newbe", true);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        Common.SetFullScreen(getWindow());
+        super.onResume();
     }
 }
