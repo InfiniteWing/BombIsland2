@@ -163,6 +163,17 @@ public class Character {
                         tmp_x / Common.GAME_WIDTH_UNIT,
                         tmp_y / Common.GAME_HEIGHT_UNIT,
                         null);
+                if(player.invincibleCounter>0){
+                    if(player.invincibleCounter%32>=16){
+                        alphaPaint.setAlpha(255-15*(player.invincibleCounter%32-16));
+                    }else{
+                        alphaPaint.setAlpha(15*(player.invincibleCounter%32+1));
+                    }
+                    canvas.drawBitmap(map.imageCaches.get("shield.png"),
+                            tmp_x / Common.GAME_WIDTH_UNIT,
+                            tmp_y / Common.GAME_HEIGHT_UNIT,
+                            alphaPaint);
+                }
             }
         }
     }

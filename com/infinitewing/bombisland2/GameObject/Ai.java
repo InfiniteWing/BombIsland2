@@ -1,6 +1,14 @@
 package com.infinitewing.bombisland2.GameObject;
 
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.os.Build;
+import android.support.v4.content.ContextCompat;
+
 import com.infinitewing.bombisland2.Bluetooth;
+import com.infinitewing.bombisland2.R;
 
 /**
  * Created by InfiniteWing on 2016/8/18.
@@ -13,78 +21,141 @@ public class Ai extends Player {
             IQ_70 = 4,
             IQ_100 = 5,
             GOAST = 6,
-            FLYING_SHIP = 7;
+            FLYING_SHIP = 7,
+            BOSS_00 = 8,
+            BOSS_01 = 9,
+            BOSS_02 = 10;
     public Location targetLocation;
-    public int type;
+    public int type, life;
+    public Skill skill;
+    public String transID = null;
+
+    public static int GetType(String id) {
+        if (id.equals("unitychain_boss00")) {
+            return Ai.BOSS_00;
+        } else if (id.equals("unitychain_boss01")) {
+            return Ai.BOSS_01;
+        } else if (id.equals("unitychain_boss02")) {
+            return Ai.BOSS_02;
+        } else {
+            return Ai.IQ_30;
+        }
+    }
 
     public Ai(String id, int x, int y, Map map, int type) {
         super(id, x, y, map);
+        life = 1;
+        if (type == BOSS_00) {
+            transID = "unitychain_boss01";
+        }
+        if (type == BOSS_01) {
+            life = 3;
+        }
         teamID = 2;
         this.type = type;
         targetLocation = new Location(x, y);
     }
 
+    public Boolean DoSkill() {
+        switch (type) {
+            case BOSS_01:
+                if (Common.RandomNum(1000) < 80) {
+                    Skill s = new Skill(this, "skill_01", map, Common.gameView.getContext());
+                    skill = s;
+                    return true;
+                }
+                break;
+            case BOSS_00:
+                if (Common.RandomNum(1000) < 40) {
+                    Skill s = new Skill(this, "skill_01", map, Common.gameView.getContext());
+                    skill = s;
+                    return true;
+                }
+                break;
+            case BOSS_02:
+                if (Common.RandomNum(1000) < 40) {
+                    Skill s = new Skill(this, "skill_01", map, Common.gameView.getContext());
+                    skill = s;
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
     public Boolean CheckBubbleMove() {
         int x = targetLocation.x;
         int y = targetLocation.y;
-        for (Ai ai : map.ais) {
-            if (!ai.IsBubbled) {
-                continue;
+        for (Player player : map.players) {
+            if (CheckBubbleMove(player, x, y)) {
+                return true;
             }
-            int pX = (ai.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
-            int pY = (ai.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
-            int direction;
-            if (x == pX) {
-                if (Math.abs(y - pY) > 0) {
-                    if (y > pY) {
-                        if (map.mapObstacles[x][y - 1] > 0) {
-                            continue;
-                        }
-                        direction = Location.LOCATION_TOP;
-                        targetLocation.y = y - 1;
-                        if (character.direction != direction) {
-                            character.InitImage();
-                            character.direction = direction;
-                        }
-                        return true;
-                    } else {
-                        if (map.mapObstacles[x][y + 1] > 0) {
-                            continue;
-                        }
-                        direction = Location.LOCATION_DOWN;
-                        targetLocation.y = y + 1;
-                        if (character.direction != direction) {
-                            character.InitImage();
-                            character.direction = direction;
-                        }
-                        return true;
+        }
+        for (Player ai : map.ais) {
+            if (CheckBubbleMove(ai, x, y)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Boolean CheckBubbleMove(Player ai, int x, int y) {
+        if (!ai.IsBubbled) {
+            return false;
+        }
+        int pX = (ai.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+        int pY = (ai.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+        int direction;
+        if (x == pX) {
+            if (Math.abs(y - pY) > 0) {
+                if (y > pY) {
+                    if (map.mapObstacles[x][y - 1] > 0) {
+                        return false;
                     }
+                    direction = Location.LOCATION_TOP;
+                    targetLocation.y = y - 1;
+                    if (character.direction != direction) {
+                        character.InitImage();
+                        character.direction = direction;
+                    }
+                    return true;
+                } else {
+                    if (map.mapObstacles[x][y + 1] > 0) {
+                        return false;
+                    }
+                    direction = Location.LOCATION_DOWN;
+                    targetLocation.y = y + 1;
+                    if (character.direction != direction) {
+                        character.InitImage();
+                        character.direction = direction;
+                    }
+                    return true;
                 }
-            } else if (y == pY) {
-                if (Math.abs(x - pX) > 0) {
-                    if (x > pX) {
-                        if (map.mapObstacles[x - 1][y] > 0) {
-                            continue;
-                        }
-                        direction = Location.LOCATION_LEFT;
-                        targetLocation.x = x - 1;
-                        if (character.direction != direction) {
-                            character.InitImage();
-                            character.direction = direction;
-                        }
-                        return true;
-                    } else {
-                        if (map.mapObstacles[x + 1][y] > 0) {
-                            continue;
-                        }
-                        direction = Location.LOCATION_RIGHT;
-                        targetLocation.x = x + 1;
-                        if (character.direction != direction) {
-                            character.InitImage();
-                            character.direction = direction;
-                        }
-                        return true;
+            }
+        } else if (y == pY) {
+            if (Math.abs(x - pX) > 0) {
+                if (x > pX) {
+                    if (map.mapObstacles[x - 1][y] > 0) {
+                        return false;
                     }
+                    direction = Location.LOCATION_LEFT;
+                    targetLocation.x = x - 1;
+                    if (character.direction != direction) {
+                        character.InitImage();
+                        character.direction = direction;
+                    }
+                    return true;
+                } else {
+                    if (map.mapObstacles[x + 1][y] > 0) {
+                        return false;
+                    }
+                    direction = Location.LOCATION_RIGHT;
+                    targetLocation.x = x + 1;
+                    if (character.direction != direction) {
+                        character.InitImage();
+                        character.direction = direction;
+                    }
+                    return true;
                 }
             }
         }
@@ -143,6 +214,9 @@ public class Ai extends Player {
         switch (type) {
             case IQ_10:
             case IQ_30:
+            case BOSS_00:
+            case BOSS_01:
+            case BOSS_02:
             case IQ_50:
             case IQ_70:
             case IQ_100:
@@ -215,6 +289,31 @@ public class Ai extends Player {
         int y = targetLocation.y;
         boolean check;
         for (Player player : map.players) {
+            if (teamID == player.teamID) {
+                //如果跟玩家同一隊，就不要尾行玩家了...
+                continue;
+            }
+            int pX = (player.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            int direction[] = {Location.LOCATION_TOP, Location.LOCATION_DOWN, Location.LOCATION_LEFT, Location.LOCATION_RIGHT};
+            for (int i = 0; i < direction.length; i++) {
+                int randomIndex = Common.RandomNum(4) - 1;
+                int tmp = direction[i];
+                direction[i] = direction[randomIndex];
+                direction[randomIndex] = tmp;
+            }
+            for (int i = 0; i < direction.length; i++) {
+                check = FollowMoveTo(x, y, pX, pY, direction[i]);
+                if (check) {
+                    return true;
+                }
+            }
+        }
+        for (Player player : map.ais) {
+            if (teamID == player.teamID) {
+                //Ai不用尾行Ai
+                continue;
+            }
             int pX = (player.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             int direction[] = {Location.LOCATION_TOP, Location.LOCATION_DOWN, Location.LOCATION_LEFT, Location.LOCATION_RIGHT};
@@ -371,7 +470,13 @@ public class Ai extends Player {
                 emotion.Play();
             }
             if (revivalCounter == 0) {
-                InitEmotion("emotion_ai");
+                if (type == BOSS_01) {
+                    InitEmotion("emotion_boss");
+                } else if (type == BOSS_00) {
+                    InitEmotion("emotion_boss");
+                } else {
+                    InitEmotion("emotion_ai_0"+teamID);
+                }
             } else {
                 return;
             }
@@ -390,6 +495,25 @@ public class Ai extends Player {
         }
         if (IsBubbled) {
             bubbledTime += Common.GAME_REFRESH;
+            skill = null;
+            return;
+        }
+        //這裡跑技能，會放技能就代表他已經站定點
+        if (skill != null) {
+            if (skill.effect != null) {
+                skill.effect.Play();
+                if (skill.effect.IsEnd) {
+                    skill.effect = null;
+                }
+            } else {
+                //如果技能特效放完，等待延遲時間後，就會施放技能效果
+                if (skill.skillDelay-- < 0) {
+                    skill.SkillEffect();
+                    invincibleCounter = skill.invincibleTime;
+                    //讓主角無敵一段時間，避免被自己的技能殺死...
+                    skill = null;
+                }
+            }
             return;
         }
         IsMoving = true;
@@ -413,6 +537,13 @@ public class Ai extends Player {
                     DefaultMove(x, y);
                     break;
                 case IQ_30:
+                case BOSS_00:
+                case BOSS_01:
+                case BOSS_02:
+                    if (DoSkill()) {
+                        //查看是否會使用技能
+                        break;
+                    }
                     SetBomb();
                     if (CheckBubbleMove()) {
                         break;
@@ -711,6 +842,30 @@ public class Ai extends Player {
 
     public Boolean HaveEnemy(int x, int y) {
         for (Player player : map.players) {
+            if (player.teamID == teamID) {
+                //不要害到自己人
+                continue;
+            }
+            int pX = (player.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
+            if (pX == x && pY == y) {
+                return true;
+            } else if (pX == x) {
+                if (wb_power >= Math.abs(y - pY)) {
+                    return true;
+                }
+            } else if (pY == y) {
+                if (wb_power >= Math.abs(x - pX)) {
+                    return true;
+                }
+            }
+        }
+        //如果電腦跟玩家同一隊的話
+        for (Player player : map.ais) {
+            if (player.teamID == teamID) {
+                //不要害到自己人
+                continue;
+            }
             int pX = (player.player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             int pY = (player.player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
             if (pX == x && pY == y) {
@@ -765,5 +920,28 @@ public class Ai extends Player {
             return false;
         }
         return map.mapObstacles[x][y] == 2;
+    }
+
+    @Override
+    public void DrawEmotion(Canvas canvas){
+        if(teamID==map.players.elementAt(0).teamID){
+            //同隊不用畫標記
+            return;
+        }
+        super.DrawEmotion(canvas);
+    }
+    @Override
+    public void Draw(Canvas canvas) {
+        super.Draw(canvas);
+        if (skill != null) {
+            if (skill.effect != null) {
+                if (skill.isAllMap) {
+                    //地圖技
+                } else {
+                    //個人技能
+                    skill.effect.Draw(player_x, player_y, canvas);
+                }
+            }
+        }
     }
 }

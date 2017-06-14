@@ -8,10 +8,15 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -40,7 +45,7 @@ public class GameVersusAi extends Activity {
     private Resources res;
     public int AiCount = 1, maxPlayer = 8;
     public Vector<ImageView> imageViews;
-    public Vector<TextView> addTVs, removeTVs;
+    public Vector<TextView> addTVs, removeTVs, groupTVs;
     public Vector<LinearLayout> linearLayouts;
     public Vector<Player> ais;
     public Boolean aiOns[];
@@ -49,6 +54,10 @@ public class GameVersusAi extends Activity {
     public Boolean BGM;
     public GoogleApiClient mGoogleApiClient;
     public String mSaveGameData;
+    public int playerGroup = 1;
+    public Vector<Integer> aiGroups;
+    public int chooseGroupIndex;
+    public AlertDialog alertDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +71,13 @@ public class GameVersusAi extends Activity {
         imageViews = new Vector<>();
         addTVs = new Vector<>();
         removeTVs = new Vector<>();
+        groupTVs = new Vector<>();
         linearLayouts = new Vector<>();
+        aiGroups = new Vector<>();
+        for (int i = 0; i < 7; i++) {
+            aiGroups.add(2);
+            //預設都是第二隊
+        }
         ais = new Vector<>();
         Player ai = new Player("ai02", getApplicationContext());
         ais.add(ai);//第一個AI
@@ -94,6 +109,14 @@ public class GameVersusAi extends Activity {
             imageView.setOnClickListener(new ClickListener());
         }
 
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV1));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV2));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV3));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV4));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV5));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV6));
+        groupTVs.add((TextView) findViewById(R.id.GameVersusAi_TV7));
+
         addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV2));
         addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV3));
         addTVs.add((TextView) findViewById(R.id.GameVersusAi_AddTV4));
@@ -122,12 +145,17 @@ public class GameVersusAi extends Activity {
         for (TextView tv : removeTVs) {
             tv.setOnClickListener(new ClickListener());
         }
+        for (TextView tv : groupTVs) {
+            tv.setOnClickListener(new ClickListener());
+        }
 
         findViewById(R.id.GameVersusAi_Submit).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_Back).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_ChooseMapTV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_PlayerIV).setOnClickListener(new ClickListener());
         findViewById(R.id.GameVersusAi_Guide).setOnClickListener(new ClickListener());
+        findViewById(R.id.GameVersusAi_Player_Group).setOnClickListener(new ClickListener());
+        findViewById(R.id.GameVersusAi_IV).setOnClickListener(new ClickListener());
         AddAi(0);
         for (int i = 1; i < imageViews.size(); i++) {
             RemoveAi(i);
@@ -173,6 +201,7 @@ public class GameVersusAi extends Activity {
         intent.putExtra("newbe", true);
         startActivity(intent);
     }
+
 
     public class ClickListener implements View.OnClickListener {
         @Override
@@ -242,7 +271,31 @@ public class GameVersusAi extends Activity {
                     RemoveAi(6);
                     break;
 
-
+                case R.id.GameVersusAi_Player_Group:
+                    ShowChooseGroupDialog(0);
+                    break;
+                case R.id.GameVersusAi_TV1:
+                    ShowChooseGroupDialog(1);
+                    break;
+                case R.id.GameVersusAi_TV2:
+                    ShowChooseGroupDialog(2);
+                    break;
+                case R.id.GameVersusAi_TV3:
+                    ShowChooseGroupDialog(3);
+                    break;
+                case R.id.GameVersusAi_TV4:
+                    ShowChooseGroupDialog(4);
+                    break;
+                case R.id.GameVersusAi_TV5:
+                    ShowChooseGroupDialog(5);
+                    break;
+                case R.id.GameVersusAi_TV6:
+                    ShowChooseGroupDialog(6);
+                    break;
+                case R.id.GameVersusAi_TV7:
+                    ShowChooseGroupDialog(7);
+                    break;
+                case R.id.GameVersusAi_IV:
                 case R.id.GameVersusAi_ChooseMapTV:
                     intent = new Intent(GameVersusAi.this, GameChooseMap.class);
                     intent.putExtra("map", map);
@@ -252,9 +305,23 @@ public class GameVersusAi extends Activity {
                     GameVersusAi.this.finish();
                     break;
                 case R.id.GameVersusAi_Submit:
+                    boolean teamCheck=false;
+                    for (int i = 0; i < 7; i++) {
+                        if (aiOns[i]) {
+                            if(aiGroups.elementAt(i)!=playerGroup){
+                                teamCheck=true;
+                            }
+                        }
+                    }
+                    if(!teamCheck){
+                        Toast.makeText(getApplicationContext(),R.string.game_versus_ai_group_error,Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     intent = new Intent(GameVersusAi.this, GameMain.class);
                     intent.putExtra("hero", hero);
                     intent.putExtra("map", map);
+                    intent.putExtra("player_group", playerGroup);
+
                     intent.putExtra("ai_count", GetAiCount());
                     String ai_info = "";
                     boolean c = false;
@@ -268,6 +335,18 @@ public class GameVersusAi extends Activity {
                         }
                     }
                     intent.putExtra("ai_info", ai_info);
+                    String ai_group_info = "";
+                    c = false;
+                    for (int i = 0; i < 7; i++) {
+                        if (aiOns[i]) {
+                            if (c) {
+                                ai_group_info += ",";
+                            }
+                            ai_group_info += aiGroups.elementAt(i);
+                            c = true;
+                        }
+                    }
+                    intent.putExtra("ai_group_info", ai_group_info);
                     startActivityForResult(intent, 8888);
 
                     SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
@@ -286,6 +365,119 @@ public class GameVersusAi extends Activity {
         }
     }
 
+    public class ChooseGroupClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            int id = view.getId();
+            switch (id) {
+                case R.id.VersusAI_Choose_Group_01:
+                    ChooseGroup(1);
+                    break;
+                case R.id.VersusAI_Choose_Group_02:
+                    ChooseGroup(2);
+                    break;
+                case R.id.VersusAI_Choose_Group_03:
+                    ChooseGroup(3);
+                    break;
+                case R.id.VersusAI_Choose_Group_04:
+                    ChooseGroup(4);
+                    break;
+                case R.id.VersusAI_Choose_Group_05:
+                    ChooseGroup(5);
+                    break;
+                case R.id.VersusAI_Choose_Group_06:
+                    ChooseGroup(6);
+                    break;
+                case R.id.VersusAI_Choose_Group_07:
+                    ChooseGroup(7);
+                    break;
+                case R.id.VersusAI_Choose_Group_08:
+                    ChooseGroup(8);
+                    break;
+            }
+        }
+    }
+
+    public void ChooseGroup(int group) {
+        alertDialog.hide();
+        if (chooseGroupIndex == 0) {
+            //玩家Group
+            playerGroup = group;
+        } else {
+            aiGroups.setElementAt(group, chooseGroupIndex - 1);
+        }
+        SetGroupBGAll();
+    }
+
+    public void SetGroupBGAll() {
+        SetGroupBG((TextView) findViewById(R.id.GameVersusAi_Player_Group), playerGroup);
+        for (int i = 0; i < groupTVs.size(); i++) {
+            SetGroupBG(groupTVs.elementAt(i), aiGroups.elementAt(i));
+        }
+    }
+
+    public void SetGroupBG(TextView tv, int group) {
+        switch (group) {
+            case 1:
+                tv.setBackgroundResource(R.color.group_01);
+                break;
+            case 2:
+                tv.setBackgroundResource(R.color.group_02);
+                break;
+            case 3:
+                tv.setBackgroundResource(R.color.group_03);
+                break;
+            case 4:
+                tv.setBackgroundResource(R.color.group_04);
+                break;
+            case 5:
+                tv.setBackgroundResource(R.color.group_05);
+                break;
+            case 6:
+                tv.setBackgroundResource(R.color.group_06);
+                break;
+            case 7:
+                tv.setBackgroundResource(R.color.group_07);
+                break;
+            case 8:
+                tv.setBackgroundResource(R.color.group_08);
+                break;
+        }
+    }
+
+    public void ShowChooseGroupDialog(int index) {
+        chooseGroupIndex = index;
+        LayoutInflater inflater = LayoutInflater.from(GameVersusAi.this);
+        final View chooseGroupView = inflater.inflate(R.layout.versus_ai_choose_group, null);
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_01).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_02).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_03).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_04).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_05).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_06).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_07).setOnClickListener(new ChooseGroupClickListener());
+        chooseGroupView.findViewById(R.id.VersusAI_Choose_Group_08).setOnClickListener(new ChooseGroupClickListener());
+        alertDialog = new AlertDialog.Builder(GameVersusAi.this).create();
+        alertDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        alertDialog.setView(chooseGroupView);
+        alertDialog.setTitle(R.string.game_versus_ai_group_title);
+        alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                Common.SetFullScreen(getWindow());
+            }
+        });
+        alertDialog.getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        alertDialog.show();
+        Common.SetFullScreen(alertDialog.getWindow());
+        alertDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        alertDialog.getWindow().setLayout(
+                Common.DP2PX(300, getApplicationContext()),
+                alertDialog.getWindow().getAttributes().height);
+    }
+
     public void LoadHero() {
         Player player = new Player(hero, getApplicationContext());
         ImageView iv = (ImageView) findViewById(R.id.GameVersusAi_PlayerIV);
@@ -297,11 +489,15 @@ public class GameVersusAi extends Activity {
         for (int i = 0; i < 8 - maxPlayer; i++) {
             RemoveAi(i + maxPlayer - 1);
             addTVs.elementAt(i + maxPlayer - 2).setVisibility(View.GONE);
+            linearLayouts.elementAt(i + maxPlayer - 1).setVisibility(View.GONE);
         }
         for (int i = 0; i < maxPlayer - 2; i++) {
             if (!aiOns[i + 1]) {
                 addTVs.elementAt(i).setVisibility(View.VISIBLE);
             }
+        }
+        for (int i = 0; i < maxPlayer - 1; i++) {
+            linearLayouts.elementAt(i).setVisibility(View.VISIBLE);
         }
         Map m = new Map(map, getApplicationContext());
         TextView tv = (TextView) findViewById(R.id.GameVersusAi_TitleTV);
@@ -363,38 +559,11 @@ public class GameVersusAi extends Activity {
         return c;
     }
 
-    public void SaveGameToGoogle() {
-        AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
-            @Override
-            protected Integer doInBackground(Void... params) {
-                // Open the saved game using its name.
-                mSaveGameData = Common.GenerateSaveData(getApplicationContext());
-                try {
-                    Common.writeSnapshot(mGoogleApiClient, Common.APP_GOOGLE_UID, mSaveGameData.getBytes(),
-                            BitmapFactory.decodeResource(getResources(), R.drawable.savebg),
-                            Common.getStringResourceByName("app_name", getApplicationContext()));
-                } catch (Exception e) {
-                    e.getCause();
-                }
-                return 1;
-            }
-
-            @Override
-            protected void onPostExecute(Integer status) {
-            }
-        };
-        try {
-            task.execute();
-        } catch (Exception e) {
-            e.getCause();
-        }
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         try {
-            SaveGameToGoogle();
+            Common.SaveGameToGoogle(mGoogleApiClient, getApplicationContext());
         } catch (Exception e) {
             e.getCause();
         }

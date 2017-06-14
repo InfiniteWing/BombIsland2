@@ -23,6 +23,7 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.CheckBox;
 import android.widget.TextView;
@@ -33,12 +34,14 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadata;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.infinitewing.bombisland2.GameObject.Common;
 import com.infinitewing.bombisland2.GameObject.Recorder;
+import com.infinitewing.bombisland2.GameObject.Story;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -145,7 +148,7 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                             if (NeedToSleepForWelcome) {
                                 LoadGameFromGoogle();
                                 if (nowLoadingDialog != null) {
-                                    nowLoadingDialog.show();
+                                    Common.SetAlertDialog(nowLoadingDialog);
                                 }
                             } else {
                                 try {
@@ -201,11 +204,12 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
             int id = view.getId();
             switch (id) {
                 case R.id.index_1:
-                    Toast.makeText(getApplicationContext(), R.string.index_building, Toast.LENGTH_SHORT).show();
+                    intent = new Intent(Index.this, StoryIndex.class);
+                    startActivityForResult(intent, 1000);
                     break;
                 case R.id.index_2:
                     intent = new Intent(Index.this, GameVersusAi.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1000);
                     break;
                 case R.id.index_3:
                     SharedPreferences sp;
@@ -229,11 +233,11 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                     break;
                 case R.id.index_4:
                     intent = new Intent(Index.this, GameSetting.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1000);
                     break;
                 case R.id.index_5:
                     intent = new Intent(Index.this, GameGuide.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, 1000);
                     break;
                 case R.id.index_6:
                     try {
@@ -243,7 +247,8 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                     }
                     break;
                 case R.id.index_7:
-                    Toast.makeText(getApplicationContext(), R.string.index_building, Toast.LENGTH_SHORT).show();
+                    intent = new Intent(Index.this, Store.class);
+                    startActivityForResult(intent, 1000);
                     break;
                 case R.id.index_8:
                     HadShowSignIn = false;
@@ -254,7 +259,7 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                             mGoogleApiClient.connect();
                         } else {
                             intent = new Intent(Index.this, Records.class);
-                            startActivity(intent);
+                            startActivityForResult(intent, 1000);
                         }
                     }
                     break;
@@ -296,7 +301,7 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                     arrayList.add(getString(R.string.game_endless_easy));
                     arrayList.add(getString(R.string.game_endless_normal));
                     arrayList.add(getString(R.string.game_endless_hard));
-                    new AlertDialog.Builder(Index.this)
+                    AlertDialog alertDialog = new AlertDialog.Builder(Index.this)
                             .setItems(arrayList.toArray(new String[arrayList.size()]), new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -310,18 +315,19 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                                     StartEndlessGame();
                                 }
                             }).setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            Common.SetFullScreen(getWindow());
-                        }
-                    })
-                            .show();
+                                @Override
+                                public void onCancel(DialogInterface dialog) {
+                                    Common.SetFullScreen(getWindow());
+                                }
+                            })
+                            .create();
+                    Common.SetAlertDialog(alertDialog);
                     break;
                 case R.id.index_12:
                     Index.this.finish();
                     break;
                 case R.id.index_13:
-                    new AlertDialog.Builder(Index.this)
+                    alertDialog = new AlertDialog.Builder(Index.this)
                             .setTitle(R.string.index_rating)
                             .setMessage(R.string.index_rating_hint)
                             .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -351,7 +357,8 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                                     Common.SetFullScreen(getWindow());
                                 }
                             })
-                            .show();
+                            .create();
+                    Common.SetAlertDialog(alertDialog);
                     break;
             }
         }
@@ -398,32 +405,35 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                 Manifest.permission.ACCESS_COARSE_LOCATION
         }, REQUEST_ACCESS_COARSE_LOCATION_PERMISSION);
     }
-    public void ShowBTGame(){
+
+    public void ShowBTGame() {
         arrayList = new ArrayList<>();
         arrayList.add(getString(R.string.bt_setting_server));
         arrayList.add(getString(R.string.bt_setting_client));
-        new AlertDialog.Builder(Index.this)
+        AlertDialog alertDialog = new AlertDialog.Builder(Index.this)
                 .setItems(arrayList.toArray(new String[arrayList.size()]), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (which == 0) {
                             intent = new Intent(Index.this, Bluetooth.class);
                             intent.putExtra("IsServer", true);
-                            startActivity(intent);
+                            startActivityForResult(intent, 1000);
                         } else {
                             intent = new Intent(Index.this, Bluetooth.class);
                             intent.putExtra("IsServer", false);
-                            startActivity(intent);
+                            startActivityForResult(intent, 1000);
                         }
                     }
                 }).setOnCancelListener(new DialogInterface.OnCancelListener() {
-            @Override
-            public void onCancel(DialogInterface dialog) {
-                Common.SetFullScreen(getWindow());
-            }
-        })
-                .show();
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        Common.SetFullScreen(getWindow());
+                    }
+                })
+                .create();
+        Common.SetAlertDialog(alertDialog);
     }
+
     public void ShowUpdate(boolean forceShow) throws IOException {
         SharedPreferences sp;
         sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
@@ -448,9 +458,16 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
             ((TextView) update_view.findViewById(R.id.FormSystemUpdate_TextView)).setText(update_msg);
             ((WebView) update_view.findViewById(R.id.Update_WV)).loadUrl("file:///android_asset/icons.html");
             update_view.findViewById(R.id.Update_WV).setBackgroundColor(Color.TRANSPARENT);
+            AlertDialog alertDialog;
             if (forceShow) {
-                update_view.findViewById(R.id.FormSystemUpdate_CheckBox).setVisibility(View.GONE);
-                new AlertDialog.Builder(Index.this)
+                update_view.findViewById(R.id.FormSystemUpdate_CheckBox_Layout).setVisibility(View.GONE);
+                update_view.findViewById(R.id.FormSystemUpdate_SV).setPadding(
+                        Common.DP2PX(20, getApplicationContext()),
+                        Common.DP2PX(0, getApplicationContext()),
+                        Common.DP2PX(20, getApplicationContext()),
+                        Common.DP2PX(0, getApplicationContext())
+                );
+                alertDialog = new AlertDialog.Builder(Index.this)
                         .setTitle(R.string.index_about)
                         .setView(update_view)
                         .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -458,10 +475,10 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                             public void onCancel(DialogInterface dialog) {
                                 Common.SetFullScreen(getWindow());
                             }
-                        })
-                        .show();
+                        }).setPositiveButton(R.string.index_copyright_ok, null)
+                        .create();
             } else {
-                new AlertDialog.Builder(Index.this)
+                alertDialog = new AlertDialog.Builder(Index.this)
                         .setTitle(R.string.index_about)
                         .setView(update_view)
                         .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -470,7 +487,7 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                                 Common.SetFullScreen(getWindow());
                             }
                         })
-                        .setPositiveButton("確定", new DialogInterface.OnClickListener() {
+                        .setPositiveButton(R.string.index_copyright_confirm, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 if (((CheckBox) update_view.findViewById(R.id.FormSystemUpdate_CheckBox)).isChecked()) {
                                     SharedPreferences sp;
@@ -480,8 +497,9 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                                     spEditor.putBoolean("show_update", false).commit();
                                 }
                             }
-                        }).show();
+                        }).create();
             }
+            Common.SetAlertDialog(alertDialog);
         }
     }
 
@@ -494,21 +512,15 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
                 // Open the saved game using its name.
                 Snapshots.OpenSnapshotResult result = Games.Snapshots.open(mGoogleApiClient,
                         mCurrentSaveName, true).await();
-
-                // Check the result of the open operation
-                if (result.getStatus().isSuccess()) {
-                    Snapshot snapshot = result.getSnapshot();
-                    // Read the byte content of the saved game.
+                Snapshot snapshot = Common.ProcessSnapshotOpenResult(mGoogleApiClient, result, 0);
+                if(snapshot!=null) {
                     try {
                         mSaveGameData = new String(snapshot.getSnapshotContents().readFully());
                         HadGoogleRecord = true;
                     } catch (IOException e) {
                         e.getCause();
                     }
-                } else {
-
                 }
-
                 return result.getStatus().getStatusCode();
             }
 
@@ -540,6 +552,7 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Common.SetFullScreen(getWindow());
+        System.gc();
         if (requestCode == SHOW_BLUETOOTH_GUIDE) {
             Boolean ACCESS_COARSE_LOCATION = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
             if (!ACCESS_COARSE_LOCATION) {
@@ -551,39 +564,13 @@ public class Index extends Activity implements ActivityCompat.OnRequestPermissio
             mGoogleApiClient.connect();
         } else if (requestCode == ENDLESS_GAME) {
             try {
-                SaveGameToGoogle();
+                Common.SaveGameToGoogle(mGoogleApiClient, getApplicationContext());
             } catch (Exception e) {
                 e.getCause();
             }
         }
     }
 
-    public void SaveGameToGoogle() {
-        AsyncTask<Void, Void, Integer> task = new AsyncTask<Void, Void, Integer>() {
-            @Override
-            protected Integer doInBackground(Void... params) {
-                // Open the saved game using its name.
-                mSaveGameData = Common.GenerateSaveData(getApplicationContext());
-                try {
-                    Common.writeSnapshot(mGoogleApiClient, Common.APP_GOOGLE_UID, mSaveGameData.getBytes(),
-                            BitmapFactory.decodeResource(getResources(), R.drawable.savebg),
-                            Common.getStringResourceByName("app_name", getApplicationContext()));
-                } catch (Exception e) {
-                    e.getCause();
-                }
-                return 1;
-            }
-
-            @Override
-            protected void onPostExecute(Integer status) {
-            }
-        };
-        try {
-            task.execute();
-        } catch (Exception e) {
-            e.getCause();
-        }
-    }
 
     private boolean CheckAppInstalled(String uri) {
         PackageManager pm = getPackageManager();

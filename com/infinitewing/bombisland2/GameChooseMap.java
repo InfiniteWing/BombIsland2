@@ -67,7 +67,7 @@ public class GameChooseMap extends Activity {
                         message += Common.getStringResourceByName("game_choose_map_buy_message01", getApplicationContext()) + "?\n" +
                                 Common.getStringResourceByName("game_choose_map_buy_message02", getApplicationContext()) + map.price +
                                 Common.getStringResourceByName("game_choose_map_buy_message03", getApplicationContext()) + money;
-                        new AlertDialog.Builder(GameChooseMap.this)
+                       AlertDialog alertDialog= new AlertDialog.Builder(GameChooseMap.this)
                                 .setTitle(R.string.game_choose_map_buy_title)
                                 .setMessage(message)
                                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -98,7 +98,8 @@ public class GameChooseMap extends Activity {
                                         Common.SetFullScreen(getWindow());
                                     }
                                 })
-                                .show();
+                                .create();
+                        Common.SetAlertDialog(alertDialog);
                     }
                 }
             }

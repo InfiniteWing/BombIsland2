@@ -18,7 +18,7 @@ import java.util.Vector;
 public class MapObject {
     public static final int TYPE_OTHER = 1, TYPE_ITEM = 2,
             TYPE_DESTROYABLE = 3, TYPE_DESTROYABLE_MOVABLE = 4,
-            TYPE_BOMB = 5, TYPE_CENTER_OBJ = 6,TYPE_EMOTION=7;
+            TYPE_BOMB = 5, TYPE_CENTER_OBJ = 6, TYPE_EMOTION = 7;
     public Location location, startLocation;
     public Animation animation;
     public int type;
@@ -159,23 +159,29 @@ public class MapObject {
     }
 
     public void Draw(int x, int y, Canvas canvas) {
+        Draw(x,y,canvas,null);
+    }
+    public void Draw(int x,int y,Canvas canvas,Paint paint){
         if (animation.img == null) {
             animation.InitImage();
         }
         int tmp_x = x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
         int tmp_y = y;
+        if (animation.width_unit > 1) {
+            tmp_x -= (animation.width_unit - 1) * Common.PLAYER_POSITION_RATE / 2;
+        }
+        if (animation.height_unit > 1) {
+            tmp_y -= (animation.height_unit - 1) * Common.PLAYER_POSITION_RATE / 2;
+        }
         tmp_x *= Common.gameView.screenWidth;
         tmp_y *= Common.gameView.screenHeight;
         tmp_x /= Common.PLAYER_POSITION_RATE;
         tmp_y /= Common.PLAYER_POSITION_RATE;
-        Paint alphaPaint = new Paint();
-
         canvas.drawBitmap(animation.img,
                 tmp_x / Common.GAME_WIDTH_UNIT,
                 tmp_y / Common.GAME_HEIGHT_UNIT,
-                alphaPaint);
+                paint);
     }
-
     public void BombExplosion() {
         map.mapObstacles[location.x][location.y] = 0;
         IsEnd = true;
@@ -190,7 +196,7 @@ public class MapObject {
             Common.gameView.soundManager.addSound("explosion.mp3");
             Common.gameView.hadPlayExplosion = true;
         }
-        Explosion e = new Explosion(new Location(location.x, location.y));
+        Explosion e = new Explosion(new Location(location.x, location.y),this);
         e.delay = 0;
         map.explosions.add(e);
 
@@ -208,14 +214,14 @@ public class MapObject {
             }
             if (!HadBomb) {
                 if (map.mapObstacles[x][location.y] == 2) {
-                    Explosion explosion = new Explosion(new Location(x, location.y));
+                    Explosion explosion = new Explosion(new Location(x, location.y),this);
                     explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
                     map.explosions.add(explosion);
                     break;
                 } else if (map.mapObstacles[x][location.y] == 1) {
                     break;
                 }
-                Explosion explosion = new Explosion(new Location(x, location.y));
+                Explosion explosion = new Explosion(new Location(x, location.y),this);
                 explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
                 map.explosions.add(explosion);
             }
@@ -235,14 +241,14 @@ public class MapObject {
             }
             if (!HadBomb) {
                 if (map.mapObstacles[x][location.y] == 2) {
-                    Explosion explosion = new Explosion(new Location(x, location.y));
+                    Explosion explosion = new Explosion(new Location(x, location.y),this);
                     explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
                     map.explosions.add(explosion);
                     break;
                 } else if (map.mapObstacles[x][location.y] == 1) {
                     break;
                 }
-                Explosion explosion = new Explosion(new Location(x, location.y));
+                Explosion explosion = new Explosion(new Location(x, location.y),this);
                 explosion.delay = Math.abs(location.x - x) * Common.GAME_REFRESH;
                 map.explosions.add(explosion);
             }
@@ -263,14 +269,14 @@ public class MapObject {
             }
             if (!HadBomb) {
                 if (map.mapObstacles[location.x][y] == 2) {
-                    Explosion explosion = new Explosion(new Location(location.x, y));
+                    Explosion explosion = new Explosion(new Location(location.x, y),this);
                     explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
                     map.explosions.add(explosion);
                     break;
                 } else if (map.mapObstacles[location.x][y] == 1) {
                     break;
                 }
-                Explosion explosion = new Explosion(new Location(location.x, y));
+                Explosion explosion = new Explosion(new Location(location.x, y),this);
                 explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
                 map.explosions.add(explosion);
             }
@@ -289,14 +295,14 @@ public class MapObject {
             }
             if (!HadBomb) {
                 if (map.mapObstacles[location.x][y] == 2) {
-                    Explosion explosion = new Explosion(new Location(location.x, y));
+                    Explosion explosion = new Explosion(new Location(location.x, y),this);
                     explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
                     map.explosions.add(explosion);
                     break;
                 } else if (map.mapObstacles[location.x][y] == 1) {
                     break;
                 }
-                Explosion explosion = new Explosion(new Location(location.x, y));
+                Explosion explosion = new Explosion(new Location(location.x, y),this);
                 explosion.delay = Math.abs(location.y - y) * Common.GAME_REFRESH;
                 map.explosions.add(explosion);
             }
@@ -318,6 +324,8 @@ public class MapObject {
                     } catch (Exception e) {
                         e.getCause();
                     }
+                } else {
+                    IsEnd = true;
                 }
             }
         }

@@ -66,7 +66,7 @@ public class Records extends Activity {
                 .setView(nowLoadingView).create();
         nowLoadingDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         nowLoadingDialog.setCanceledOnTouchOutside(false);
-        nowLoadingDialog.show();
+        Common.SetAlertDialog(nowLoadingDialog);
         findViewById(R.id.Records_Back).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

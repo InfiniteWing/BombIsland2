@@ -57,7 +57,8 @@ public class GameView extends SurfaceView implements
     public Context context;
     public Boolean BT_MODE = false;
     public Boolean IS_SERVER = false;
-    public Boolean ENDLESS_MODE = false;
+    public Boolean ENDLESS_MODE = false, SURVIVE_WITH_TEAMMATE = false;
+    public int endlessSeconds = 0;
     public GameThread gameThread;
     public Map map;
     public Resources resources;
@@ -74,7 +75,7 @@ public class GameView extends SurfaceView implements
     public double touchInitX, touchInitY, touchNowX, touchNowY;
     public boolean isControlDirection;
     private SharedPreferences sp;
-    public boolean BGM, effSound, effVibrator, FPS, pressAddBomb;
+    public boolean BGM, effSound, effVibrator, FPS, pressAddBomb, pressCashShield, pressCashRevive;
     private int controlMode;
     public Vibrator vibrator;
     public float sleep;
@@ -85,8 +86,17 @@ public class GameView extends SurfaceView implements
     public String mSaveGameData;
     public Boolean HadPreesEnd = false;
     public Bitmap bg;
+    public int cashItemRevive, cashItemShield;
 
-    public GameView(Context context, String playerID, String mapID, int aiCount, String aiInfo, MediaPlayer gamebackgroundsound, Boolean endlessMode) {
+    public GameView(Context context, String playerID, String mapID,
+                    int aiCount, String aiInfo, String teammateInfo, String bossInfo,
+                    MediaPlayer gamebackgroundsound, Boolean endlessMode) {
+        this(context, playerID, mapID, aiCount, aiInfo, teammateInfo, bossInfo, gamebackgroundsound, endlessMode, 1, null);
+    }
+
+    public GameView(Context context, String playerID, String mapID,
+                    int aiCount, String aiInfo, String teammateInfo, String bossInfo,
+                    MediaPlayer gamebackgroundsound, Boolean endlessMode, int playerGroup, String aiGroupInfo) {
         super(context);
         this.context = context;
         Common.SetGameView(this);
@@ -112,7 +122,7 @@ public class GameView extends SurfaceView implements
         IS_SERVER = false;
         gameThread = new GameThread(this, this.getHolder());
         this.aiCount = aiCount;
-        map = new Map(mapID, playerID, aiCount, aiInfo);
+        map = new Map(mapID, playerID, aiCount, aiInfo, teammateInfo, bossInfo, playerGroup, aiGroupInfo);
         this.playerID = playerID;
     }
 
@@ -294,13 +304,13 @@ public class GameView extends SurfaceView implements
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
                     Bitmap directionOut = map.imageCaches.get("direction_out.png");
-                    alphaPaint.setAlpha(120);
+                    alphaPaint.setAlpha(110);
                     canvas.drawBitmap(directionOut,
                             (float) (touchInitX - widthOffset * 2),
                             (float) (touchInitY - heightOffset * 2),
                             alphaPaint);
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
-                    alphaPaint.setAlpha(60);
+                    alphaPaint.setAlpha(50);
                     canvas.drawBitmap(directionIn,
                             (float) (touchNowX - widthOffset * 1),
                             (float) (touchNowY - heightOffset * 1),
@@ -312,7 +322,7 @@ public class GameView extends SurfaceView implements
         } else if (controlMode == 1) {
             try {
                 Bitmap directionOut = map.imageCaches.get("direction_out.png");
-                alphaPaint.setAlpha(120);
+                alphaPaint.setAlpha(110);
                 canvas.drawBitmap(directionOut,
                         (screenWidth * (-1 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
                         (screenHeight * 7) / Common.GAME_HEIGHT_UNIT,
@@ -325,7 +335,7 @@ public class GameView extends SurfaceView implements
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
-                    alphaPaint.setAlpha(60);
+                    alphaPaint.setAlpha(50);
                     canvas.drawBitmap(directionIn,
                             (float) (touchNowX - widthOffset * 1),
                             (float) (touchNowY - heightOffset * 1),
@@ -335,7 +345,7 @@ public class GameView extends SurfaceView implements
                 }
             }
         } else {
-            alphaPaint.setAlpha(120);
+            alphaPaint.setAlpha(110);
             try {
                 Bitmap direction = map.imageCaches.get("direction.png");
                 canvas.drawBitmap(direction,
@@ -351,13 +361,33 @@ public class GameView extends SurfaceView implements
         try {
             //炸彈
             Bitmap directionOut = map.imageCaches.get("target.png");
-            alphaPaint.setAlpha(120);
+            alphaPaint.setAlpha(110);
             canvas.drawBitmap(directionOut,
                     (screenWidth * (13 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT,
                     (screenHeight * 7) / Common.GAME_HEIGHT_UNIT,
                     alphaPaint);
         } catch (Exception e) {
             e.getCause();
+        }
+        if (cashItemRevive > 0) {
+            Bitmap bitmap = map.imageCaches.get("cash_revive.png");
+            if (map.hostPlayer.IsBubbled) {
+                alphaPaint.setAlpha(255);
+            } else {
+                alphaPaint.setAlpha(130);
+            }
+            canvas.drawBitmap(bitmap,
+                    (float) ((screenWidth * (15.5 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT),
+                    (float) ((screenHeight * 4.5) / Common.GAME_HEIGHT_UNIT),
+                    alphaPaint);
+        }
+        if (cashItemShield > 0) {
+            Bitmap bitmap = map.imageCaches.get("cash_shield.png");
+            alphaPaint.setAlpha(255);
+            canvas.drawBitmap(bitmap,
+                    (float) ((screenWidth * (15.5 + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) / 2)) / Common.GAME_WIDTH_UNIT),
+                    (screenHeight * 2) / Common.GAME_HEIGHT_UNIT,
+                    alphaPaint);
         }
         if (FPS) {
             map.DrawFPS(canvas);
@@ -802,6 +832,20 @@ public class GameView extends SurfaceView implements
          */
     }
 
+    public void SetPlayerSkin() {
+        SharedPreferences sp = context.getSharedPreferences(Common.APP_NAME, context.MODE_PRIVATE);
+        String bombSkin = sp.getString("bombSkin", "bomb1");
+        for (Player player : map.players) {
+            try {
+                if (player.uid.equals(playerID)) {
+                    player.bombSkin = bombSkin;
+                }
+            } catch (Exception e) {
+                e.getCause();
+            }
+        }
+    }
+
     public void Play() {
         gameTime++;
         //前面先倒數
@@ -932,6 +976,20 @@ public class GameView extends SurfaceView implements
                             if (pressAddBomb) {
                                 player.AddBomb();
                             }
+                            if (pressCashRevive) {
+                                if (cashItemRevive > 0) {
+                                    if (player.UseCashRevive()) {
+                                        cashItemRevive--;
+                                    }
+                                }
+                            }
+                            if (pressCashShield) {
+                                if (cashItemShield > 0) {
+                                    if (player.UseCashShield()) {
+                                        cashItemShield--;
+                                    }
+                                }
+                            }
                         } else {
                             player.BTMove();
                         }
@@ -955,17 +1013,39 @@ public class GameView extends SurfaceView implements
                     }
                 }
                 Vector<Ai> removeAis = new Vector<>();
+                Vector<Ai> realiveAis = new Vector<>();
+                Vector<Ai> transAis = new Vector<>();
                 for (Ai ai : map.ais) {
                     try {
                         ai.Move();
                         ai.CheckBubble();
                         ai.CheckItem();
-                        if (ai.IsDead) {
-                            AiDeadCounter++;
-                            removeAis.add(ai);
-                            continue;
-                        }
                         ai.CheckDead();
+                        if (ai.IsDead) {
+                            ai.life--;
+                            if (ai.life <= 0) {
+                                if (ai.transID != null) {
+                                    Ai transAi;
+                                    int aiLevel = Ai.GetType(ai.transID);
+                                    transAi = new Ai(ai.transID, 1, 1, map, aiLevel);
+                                    transAi.InitEmotion("emotion_boss");
+                                    transAi.teamID = 2;
+                                    //將變身加入陣列，transAis會讓系統知道有那些AI要加入map.ais
+                                    //realiveAis會設定重生的資訊
+                                    transAis.add(transAi);
+                                    realiveAis.add(transAi);
+                                }
+                                //同隊的不能算入擊殺
+                                if (ai.teamID != map.hostPlayer.teamID) {
+                                    AiDeadCounter++;
+                                }
+                                removeAis.add(ai);
+                                continue;
+                            } else {
+                                realiveAis.add(ai);
+                                continue;
+                            }
+                        }
                     } catch (Exception e) {
                         e.getCause();
                     }
@@ -973,14 +1053,37 @@ public class GameView extends SurfaceView implements
                 if (ENDLESS_MODE) {
                     //死鬥模式下不會回收AI，而是等待10秒後於隨機位置重生
                     for (Ai ai : removeAis) {
-                        ai.revivalCounter = -25 * 10;
-                        ai.invincibleCounter = 25 * 3;//復活後3秒內無敵
-                        ai.IsDead = false;
-                        ai.IsBubbled = false;
-                        ai.deadExplosion = null;
-                        for (int i = ai.eatItems.size() - 1; i >= 10; i--) {
-                            //ai.eatItems.removeElementAt(i);
+                        try {
+                            int tmp_x, tmp_y;
+                            while (true) {
+                                tmp_x = Common.RandomNum(Common.MAP_WIDTH_UNIT) - 1;
+                                tmp_y = Common.RandomNum(Common.MAP_HEIGHT_UNIT) - 1;
+                                if (map.mapObstacles[tmp_x][tmp_y] == 0) {
+                                    break;
+                                }
+                            }
+                            ai.player_x = tmp_x * Common.PLAYER_POSITION_RATE;
+                            ai.player_y = tmp_y * Common.PLAYER_POSITION_RATE;
+                            ai.targetLocation.x = tmp_x;
+                            ai.targetLocation.y = tmp_y;
+                            ai.InitEmotion("emotion_revival");
+                            ai.revivalCounter = -25 * 10;
+                            ai.invincibleCounter = 25 * 3;//復活後3秒內無敵
+                            if (ai.life == 0) {
+                                ai.life = 1;
+                            }
+                            ai.IsDead = false;
+                            ai.IsBubbled = false;
+                            ai.deadExplosion = null;
+                        } catch (Exception e) {
+                            e.getCause();
                         }
+                    }
+                } else {
+                    map.ais.removeAll(removeAis);
+                    map.ais.addAll(transAis);
+                    //如果是還有生命值的Boss，不會回收，而是等待10秒後於隨機位置重生
+                    for (Ai ai : realiveAis) {
                         int tmp_x, tmp_y;
                         while (true) {
                             tmp_x = Common.RandomNum(Common.MAP_WIDTH_UNIT) - 1;
@@ -994,9 +1097,12 @@ public class GameView extends SurfaceView implements
                         ai.targetLocation.x = tmp_x;
                         ai.targetLocation.y = tmp_y;
                         ai.InitEmotion("emotion_revival");
+                        ai.revivalCounter = -25 * 10;
+                        ai.invincibleCounter = 25 * 3;//復活後3秒內無敵
+                        ai.IsDead = false;
+                        ai.IsBubbled = false;
+                        ai.deadExplosion = null;
                     }
-                } else {
-                    map.ais.removeAll(removeAis);
                 }
             } else {
                 if (gameEndFrameCounter > (AchievementUnlockCount * 1500 + 5000) / Common.GAME_REFRESH) {
@@ -1125,7 +1231,7 @@ public class GameView extends SurfaceView implements
                 if (player.mountDeadCounter > 0) {
                     return;
                 }
-                if(player.IsBubbled){
+                if (player.IsBubbled) {
                     return;
                 }
                 try {
@@ -1183,6 +1289,8 @@ public class GameView extends SurfaceView implements
                         isControlDirection = false;
                     }
                 }
+                pressCashRevive = false;
+                pressCashShield = false;
                 pressAddBomb = false;
                 break;
             case MotionEvent.ACTION_DOWN:
@@ -1202,6 +1310,36 @@ public class GameView extends SurfaceView implements
         if (x > Common.OLD_SCREEN_WIDTH / 2) {
             double widthOffset = Common.OLD_SCREEN_WIDTH / Common.GAME_WIDTH_UNIT;
             double heightOffset = Common.OLD_SCREEN_HEIGHT / Common.GAME_HEIGHT_UNIT;
+            if (x >= widthOffset * 17.5 && x <= widthOffset * 19.5) {
+                if (y >= heightOffset * 2 && y <= heightOffset * 4) {
+                    pressCashShield = true;
+                    if (Single && controlMode != 0) {
+                        isControlDirection = false;
+                        for (Player player : map.players) {
+                            if (player.uid.equals(playerID)) {
+                                player.IsMoving = false;
+                                player.speed_now = 0;
+                                isControlDirection = false;
+                            }
+                        }
+                    }
+                    return;
+                }
+                if (y >= heightOffset * 4.5 && y <= heightOffset * 6.5) {
+                    pressCashRevive = true;
+                    if (Single && controlMode != 0) {
+                        isControlDirection = false;
+                        for (Player player : map.players) {
+                            if (player.uid.equals(playerID)) {
+                                player.IsMoving = false;
+                                player.speed_now = 0;
+                                isControlDirection = false;
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
             if (x >= widthOffset * 15 && x <= widthOffset * 19) {
                 if (y >= heightOffset * 7 && y <= heightOffset * 11) {
                     pressAddBomb = true;
@@ -1218,9 +1356,13 @@ public class GameView extends SurfaceView implements
                     return;
                 }
             }
+            pressCashRevive = false;
+            pressCashShield = false;
             pressAddBomb = false;
         } else {
             if (Single) {
+                pressCashRevive = false;
+                pressCashShield = false;
                 pressAddBomb = false;
             }
             if (controlMode == 2) {

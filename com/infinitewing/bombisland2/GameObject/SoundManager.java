@@ -15,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class SoundManager extends Thread {
     public Vector<SoundThread> soundThreads;
     public int soundThreadIndex;
-    public final int SoundThreadCount=8;
+    public final int SoundThreadCount=1;
 
     public SoundManager() {
         soundThreads=new Vector<>();
@@ -26,14 +26,25 @@ public class SoundManager extends Thread {
             soundThreads.add(soundThread);
         }
     }
+    public SoundManager(float volume) {
+        soundThreads=new Vector<>();
+        soundThreadIndex=0;
+        for (int i=0;i<SoundThreadCount;i++){
+            SoundThread soundThread=new SoundThread(volume);
+            soundThread.start();
+            soundThreads.add(soundThread);
+        }
+    }
     public void Stop(){
         try{
             for (int i=0;i<SoundThreadCount;i++){
                 soundThreads.elementAt(i).stop=true;
+                soundThreads.elementAt(i).Release();
             }
         }catch (Exception e){
             e.getCause();
         }
+        System.gc();
     }
     public void addSound(String AssetFilePath) {
         soundThreadIndex++;

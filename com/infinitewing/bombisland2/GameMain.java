@@ -38,8 +38,9 @@ public class GameMain extends Activity {
     public GameView gameView;
     public MediaPlayer gamebackgroundsound;
     public Intent intent;
-    public Boolean OnActivityResult = false;
+    public Boolean OnActivityResult = false,HadUpdateCashItem=false;
     public GoogleApiClient mGoogleApiClient;
+    public int cashItemRevive, cashItemShield;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,10 +92,30 @@ public class GameMain extends Activity {
             e.getCause();
         }
         gamebackgroundsound = new MediaPlayer();
-        boolean endLessMode = intent.getBooleanExtra("endless_mode", false);
+        boolean endlessMode = intent.getBooleanExtra("endless_mode", false);
+        boolean surviveWithTeammate = intent.getBooleanExtra("survive_with_teammate", false);
+        int endlessSeconds = intent.getIntExtra("endless_seconds", 0);
+        SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor spEditor = sp.edit();
+        cashItemRevive = sp.getInt(Common.STORE_ITEM_REVIVE, 0);
+        cashItemShield = sp.getInt(Common.STORE_ITEM_SHIELD, 0);
         gameView = new GameView(this, intent.getStringExtra("hero"),
                 intent.getStringExtra("map"), intent.getIntExtra("ai_count", 3),
-                intent.getStringExtra("ai_info"), gamebackgroundsound, endLessMode);
+                intent.getStringExtra("ai_info"), intent.getStringExtra("teammate_info"), intent.getStringExtra("boss_info")
+                , gamebackgroundsound, endlessMode, intent.getIntExtra("player_group", 1), intent.getStringExtra("ai_group_info"));
+        gameView.endlessSeconds = endlessSeconds;
+        gameView.SetPlayerSkin();
+        gameView.SURVIVE_WITH_TEAMMATE = surviveWithTeammate;
+        if (cashItemShield > 0) {
+            gameView.cashItemShield = 1;
+            //將點數道具數量更新
+            cashItemShield--;
+        }
+        if (cashItemRevive > 0) {
+            gameView.cashItemRevive = 1;
+            //將點數道具數量更新
+            cashItemRevive--;
+        }
         setContentView(gameView);
         gamelistener = new GameListener();
         IntentFilter filter = new IntentFilter();
@@ -133,13 +154,13 @@ public class GameMain extends Activity {
         int height = y;
         int settingWidth;
         SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
-        int resolutionMode=sp.getInt("resolutionMode", 2);
-        if(resolutionMode==0){
-            settingWidth=800;
-        }else if(resolutionMode==1){
-            settingWidth=1024;
-        }else{
-            settingWidth=1280;
+        int resolutionMode = sp.getInt("resolutionMode", 2);
+        if (resolutionMode == 0) {
+            settingWidth = 800;
+        } else if (resolutionMode == 1) {
+            settingWidth = 1024;
+        } else {
+            settingWidth = 1280;
         }
         if (width < settingWidth) {
             Common.SCREEN_WIDTH = width;
@@ -152,9 +173,29 @@ public class GameMain extends Activity {
         Common.OLD_SCREEN_HEIGHT = height;
     }
 
+    public void UpdateCashItem() {
+        if(HadUpdateCashItem){
+            return;
+        }
+        try {
+            //將點數道具數量更新
+            if(gameView!=null) {
+                SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                SharedPreferences.Editor spEditor = sp.edit();
+                cashItemRevive += gameView.cashItemRevive;
+                cashItemShield += gameView.cashItemShield;
+                spEditor.putInt(Common.STORE_ITEM_SHIELD, cashItemShield)
+                        .putInt(Common.STORE_ITEM_REVIVE, cashItemRevive).commit();
+            }
+        } catch (Exception e) {
+            e.getCause();
+        }
+        HadUpdateCashItem=true;
+    }
+
     public void Pause() {
         try {
-            if(gameView!=null) {
+            if (gameView != null) {
                 if (gameView.gamebackgroundsound != null) {
                     if (gameView.gamebackgroundsound.isPlaying()) {
                         gameView.gamebackgroundsound.stop();
@@ -193,7 +234,7 @@ public class GameMain extends Activity {
                 if (gameView.map != null) {
                     gameView.map.Release();
                 }
-                if(gameView.soundManager!=null){
+                if (gameView.soundManager != null) {
                     gameView.soundManager.Stop();
                 }
             } catch (Exception e) {
@@ -206,6 +247,7 @@ public class GameMain extends Activity {
             e.getCause();
         }
         Pause();
+        UpdateCashItem();
         GameMain.this.finish();
         super.onDestroy();
     }
@@ -222,7 +264,9 @@ public class GameMain extends Activity {
     private class GameListener extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            GameMain.this.setResult(RESULT_OK, new Intent());
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra("isWin", gameView.isWin);
+            GameMain.this.setResult(RESULT_OK, resultIntent);
             GameMain.this.finish();
             unregisterReceiver(gamelistener);
         }

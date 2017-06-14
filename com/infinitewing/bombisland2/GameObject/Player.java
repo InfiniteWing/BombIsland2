@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import com.infinitewing.bombisland2.GameObject.Parser.HeroParser;
 import com.infinitewing.bombisland2.R;
 
+import java.util.TreeMap;
 import java.util.Vector;
 
 /**
@@ -23,13 +24,15 @@ public class Player {
     public Map map;
     public Character character;
     public String imgName, deadSound, heroName;
+    public String bombSkin="bomb1";
     public int price, mountDeadCounter;
     public Vector<String> eatItems;
     public Explosion deadExplosion;
     public MapObject emotion;
     public int totalBomb = 0, totalKill = 0, totalItem = 0, totalMount = 0, totalSave = 0, totalMove = 0,
             invincibleCounter = 0, revivalCounter = 0;
-
+    public String unlockStoryName;
+    public int unlockStoryStage;
     public Player(String id, Context context) {
         this.id = id;
         character = new Character(this);
@@ -53,7 +56,24 @@ public class Player {
         eatItems = new Vector<>();
         Parse();
     }
-
+    public boolean UseCashShield(){
+        //使用點數盾五秒內無敵
+        if(!IsBubbled&&!IsDead) {
+            Common.gameView.soundManager.addSound("shield.mp3");
+            invincibleCounter = 25 * 5;
+            return true;
+        }
+        return false;
+    }
+    public boolean UseCashRevive(){
+        if(IsBubbled) {
+            IsBubbled=false;
+            Common.gameView.soundManager.addSound("bubble_save.mp3");
+            totalSave++;
+            return true;
+        }
+        return false;
+    }
     public void InitEmotion(String id) {
         emotion = new MapObject(1, 1, MapObject.TYPE_EMOTION, id, map);
     }
@@ -107,7 +127,7 @@ public class Player {
                 int x = (player_x + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
                 int y = (player_y + Common.PLAYER_POSITION_RATE / 2) / Common.PLAYER_POSITION_RATE;
                 if (map.mapObstacles[x][y] == 0) {
-                    MapObject bomb = new MapObject(x, y, MapObject.TYPE_BOMB, "bomb1", map);
+                    MapObject bomb = new MapObject(x, y, MapObject.TYPE_BOMB, bombSkin, map);
                     bomb.power = wb_power;
                     bomb.player = this;
                     while (map.bombLock) {
@@ -283,8 +303,11 @@ public class Player {
     }
 
     public void PlayDead() {
+        if(IsDead){
+            return;
+        }
         deadExplosion = new Explosion(new Location(player_x / Common.PLAYER_POSITION_RATE,
-                player_y / Common.PLAYER_POSITION_RATE));
+                player_y / Common.PLAYER_POSITION_RATE),null);
         deadExplosion.delay = 0;
         IsDead = true;
         Common.gameView.soundManager.addSound(deadSound);

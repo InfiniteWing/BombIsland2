@@ -68,6 +68,7 @@ public class FlyingShip extends Ai {
                                 player_y / Common.PLAYER_POSITION_RATE);
                         map.mapFlyingObjects.add(obj);
                         map.mapObstacles[x][y] = -1;
+                        Common.gameView.soundManager.addSound("dropitem.mp3");
                     }
                 }
             }

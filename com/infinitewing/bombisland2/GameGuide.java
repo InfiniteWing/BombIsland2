@@ -57,12 +57,8 @@ public class GameGuide extends Activity {
                 guide = "game";
                 break;
         }
-        String language = Locale.getDefault().getLanguage();
-        if (language.equals("zh")) {
-            ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/" + guide + ".html");
-        } else {
-            ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/en/" + guide + ".html");
-        }
+        ((WebView) findViewById(R.id.Guide_WV)).loadUrl("file:///android_asset/guide/" +
+                Common.GetLanguagePrefix() + guide + ".html");
     }
 
     public class ClickListener implements View.OnClickListener {

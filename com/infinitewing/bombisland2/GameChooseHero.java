@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -68,7 +69,7 @@ public class GameChooseHero extends Activity {
                         message += Common.getStringResourceByName("game_choose_hero_buy_message01", getApplicationContext()) + "?\n" +
                                 Common.getStringResourceByName("game_choose_hero_buy_message02", getApplicationContext()) + hero.price + ".\n" +
                                 Common.getStringResourceByName("game_choose_hero_buy_message03", getApplicationContext()) + money + ".";
-                        new AlertDialog.Builder(GameChooseHero.this)
+                        AlertDialog alertDialog = new AlertDialog.Builder(GameChooseHero.this)
                                 .setTitle(R.string.game_choose_hero_buy_title)
                                 .setMessage(message)
                                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
@@ -99,7 +100,8 @@ public class GameChooseHero extends Activity {
                                         Common.SetFullScreen(getWindow());
                                     }
                                 })
-                                .show();
+                                .create();
+                        Common.SetAlertDialog(alertDialog);
                     }
                 }
             }
@@ -172,11 +174,23 @@ public class GameChooseHero extends Activity {
                 continue;
             }
             String id = line.split(",")[0];
-            int price = Integer.parseInt(line.split(",")[1]);
+
             Player player = new Player(id, getApplicationContext());
-            player.price = price;
-            if (price == 0) {
+            if (line.split(",")[1].split(";")[0].equals("story")) {
+                player.price = -1;
+                player.unlockStoryName = line.split(",")[1].split(";")[1];
+                player.unlockStoryStage = Integer.parseInt(line.split(",")[1].split(";")[2]);
+            } else {
+                player.price = Integer.parseInt(line.split(",")[1]);
+            }
+            if (player.price == 0) {
                 buyedHeros.add(id);
+            } else if (player.price == -1) {
+                SharedPreferences sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                int currentStage = sp.getInt(player.unlockStoryName, 0);
+                if (currentStage >= player.unlockStoryStage) {
+                    buyedHeros.add(id);
+                }
             }
             heroLists.add(player);
         } while (line != null);
@@ -223,10 +237,18 @@ public class GameChooseHero extends Activity {
         Bitmap b = heroLists.elementAt(index).character.img;
         iv.setImageBitmap(b);
         nowHero = heroLists.elementAt(index).id;
+        findViewById(R.id.GameChooseHero_Howtoget_Hint).setVisibility(View.GONE);
         if (buyedHeros.indexOf(nowHero) >= 0) {
             findViewById(R.id.GameChooseHero_Buy).setVisibility(View.GONE);
         } else {
-            findViewById(R.id.GameChooseHero_Buy).setVisibility(View.VISIBLE);
+            if (heroLists.elementAt(index).price == -1) {
+                findViewById(R.id.GameChooseHero_Buy).setVisibility(View.GONE);
+                ((TextView) findViewById(R.id.GameChooseHero_Howtoget_Hint)).setText(R.string.game_choose_hero_gethint_story);
+                findViewById(R.id.GameChooseHero_Howtoget_Hint).setVisibility(View.VISIBLE);
+                //劇情解鎖，不能買
+            } else {
+                findViewById(R.id.GameChooseHero_Buy).setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -241,10 +263,18 @@ public class GameChooseHero extends Activity {
                 Bitmap b = heroLists.elementAt(index).character.img;
                 iv.setImageBitmap(b);
                 nowHero = heroLists.elementAt(index).id;
+                findViewById(R.id.GameChooseHero_Howtoget_Hint).setVisibility(View.GONE);
                 if (buyedHeros.indexOf(nowHero) >= 0) {
                     findViewById(R.id.GameChooseHero_Buy).setVisibility(View.GONE);
                 } else {
-                    findViewById(R.id.GameChooseHero_Buy).setVisibility(View.VISIBLE);
+                    if (heroLists.elementAt(index).price == -1) {
+                        findViewById(R.id.GameChooseHero_Buy).setVisibility(View.GONE);
+                        ((TextView) findViewById(R.id.GameChooseHero_Howtoget_Hint)).setText(R.string.game_choose_hero_gethint_story);
+                        findViewById(R.id.GameChooseHero_Howtoget_Hint).setVisibility(View.VISIBLE);
+                        //劇情解鎖，不能買
+                    } else {
+                        findViewById(R.id.GameChooseHero_Buy).setVisibility(View.VISIBLE);
+                    }
                 }
                 break;
             }

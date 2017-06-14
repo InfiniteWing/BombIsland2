@@ -119,32 +119,34 @@ public class Welcome extends Activity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (state) {
-            case 1:
-                PlayCheckSound();
-                if (GoogleConnected) {
-                    state = 2;
-                    Intent intent = new Intent(Welcome.this, Index.class);
-                    intent.putExtra("SignIn_Method", "Google");
-                    startActivity(intent);
-                    Welcome.this.finish();
-                } else {
-                    SharedPreferences sp;
-                    sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
-                    Boolean HadSignIn = sp.getBoolean("HadSignIn", false);
-                    if (HadSignIn) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            switch (state) {
+                case 1:
+                    PlayCheckSound();
+                    if (GoogleConnected) {
+                        state = 2;
                         Intent intent = new Intent(Welcome.this, Index.class);
-                        intent.putExtra("SignIn_Method", "Same");
+                        intent.putExtra("SignIn_Method", "Google");
                         startActivity(intent);
                         Welcome.this.finish();
                     } else {
-                        findViewById(R.id.Welcome_SignIn_Layout).setVisibility(View.VISIBLE);
-                        findViewById(R.id.Welcome_Press).clearAnimation();
-                        findViewById(R.id.Welcome_Press).setVisibility(View.INVISIBLE);
+                        SharedPreferences sp;
+                        sp = getSharedPreferences(Common.APP_NAME, MODE_PRIVATE);
+                        Boolean HadSignIn = sp.getBoolean("HadSignIn", false);
+                        if (HadSignIn) {
+                            Intent intent = new Intent(Welcome.this, Index.class);
+                            intent.putExtra("SignIn_Method", "Same");
+                            startActivity(intent);
+                            Welcome.this.finish();
+                        } else {
+                            findViewById(R.id.Welcome_SignIn_Layout).setVisibility(View.VISIBLE);
+                            findViewById(R.id.Welcome_Press).clearAnimation();
+                            findViewById(R.id.Welcome_Press).setVisibility(View.INVISIBLE);
+                        }
+                        state = 2;
                     }
-                    state = 2;
-                }
-                break;
+                    break;
+            }
         }
         return super.onTouchEvent(event);
     }

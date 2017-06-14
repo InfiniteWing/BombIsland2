@@ -385,6 +385,7 @@ public class Bluetooth extends Activity {
                 gameView = new GameView(this, player1.id, player2.id, true, false, map.id, 2, gamebackgroundsound);
             }
             gameView.connectedThread = connectedThread;
+            gameView.SetPlayerSkin();
             setContentView(gameView);
             gamelistener = new GameListener();
             IntentFilter filter = new IntentFilter();

@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 
 import com.infinitewing.bombisland2.GameView;
-import com.infinitewing.bombisland2.R;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,25 +41,44 @@ public class Map {
     public int[][] mapObstacles, explosionDP, willExplosionDP;
     public String id, playerID1, playerID2, playerUID;
     public String BGM, title, intro;
-    public Vector<String> aiInfos;
+    public Vector<String> aiInfos,teammateInfos,bossInfos;
     public int MaxPlayer = 0, aiCount, autoBombCounter = 0, price;
     public boolean haveAI = false, bombLock = false;
-
+    public int playerGroup=1;
+    public String aiGroupInfo;
+    public Player hostPlayer;
     public Map(String id, Context c) {
         this.id = id;
         LoadMapInfo(c);
     }
 
-    public Map(String id, String playerID, int aiCount, String aiInfo) {
+    public Map(String id, String playerID, int aiCount, String aiInfo,
+               String teammateInfo,String bossInfo,int playerGroup,String aiGroupInfo) {
         this.id = id;
+        this.aiGroupInfo=aiGroupInfo;
+        this.playerGroup=playerGroup;
         this.playerID1 = playerID;
         this.playerUID = playerID;
         this.aiCount = aiCount;
         aiInfos = new Vector<>();
+        teammateInfos=new Vector<>();
+        bossInfos=new Vector<>();
         haveAI = true;
-
-        for (String s : aiInfo.split(",")) {
-            aiInfos.add(s);
+        if(aiInfo!=null) {
+            for (String s : aiInfo.split(",")) {
+                aiInfos.add(s);
+            }
+        }
+        this.aiCount=aiInfos.size();
+        if(teammateInfo!=null) {
+            for (String s : teammateInfo.split(",")) {
+                teammateInfos.add(s);
+            }
+        }
+        if(bossInfo!=null) {
+            for (String s : bossInfo.split(",")) {
+                bossInfos.add(s);
+            }
         }
         Init(false, false);
     }
@@ -243,6 +261,33 @@ public class Map {
         source = Bitmap.createBitmap(source, 0, 0,
                 source.getWidth(), source.getHeight(), matrix, false);
         imageCaches.put("tree1.png", source);
+
+        source = Common.getBitmapFromAsset("item/shield.png");
+        matrix.reset();
+        width = 1 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 1 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("shield.png", source);
+
+        source = Common.getBitmapFromAsset("map/cash_revive.png");
+        matrix.reset();
+        width = 2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("cash_revive.png", source);
+
+        source = Common.getBitmapFromAsset("map/cash_shield.png");
+        matrix.reset();
+        width = 2 * Common.gameView.screenWidth / Common.GAME_WIDTH_UNIT;
+        height = 2 * Common.gameView.screenHeight / Common.GAME_HEIGHT_UNIT;
+        matrix.postScale((width / source.getWidth()), height / source.getHeight());
+        source = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, false);
+        imageCaches.put("cash_shield.png", source);
 
         source = Common.getBitmapFromAsset("map/swords.png");
         matrix.reset();
@@ -576,18 +621,54 @@ public class Map {
         Ai ai;
         player = new Player(playerID1, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
         player.uid = playerUID;
-        player.teamID = 1;
+        player.teamID = playerGroup;
         if (BT_MODE) {
-            if (IS_SERVER)
-                player.InitEmotion("emotion_player");
+            if (IS_SERVER) {
+                player.InitEmotion("emotion_player_0" + player.teamID);
+                hostPlayer=player;
+            }
             else
                 player.InitEmotion("emotion_ai");
         } else {
-            player.InitEmotion("emotion_player");
+            player.InitEmotion("emotion_player_0"+player.teamID);
+            hostPlayer=player;
         }
-
         players.add(player);
         randomNumLimit.add(randomNum);
+        if(teammateInfos.size()>0){
+            //如果有隊友，將對有隊伍設成跟玩家一樣
+            for(int i=0;i<teammateInfos.size();i++) {
+                while (true) {
+                    randomNum = ran.nextInt(startLocations.size());
+                    if (randomNumLimit.indexOf(randomNum) < 0) {
+                        break;
+                    }
+                }
+                int aiLevel = Ai.IQ_30;
+                ai = new Ai(teammateInfos.elementAt(i), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
+                ai.InitEmotion("emotion_teammate");
+                ai.teamID=playerGroup;
+                ais.add(ai);
+                randomNumLimit.add(randomNum);
+            }
+        }
+        if(bossInfos.size()>0){
+            //如果有Boss，加入Boss
+            for(int i=0;i<bossInfos.size();i++) {
+                while (true) {
+                    randomNum = ran.nextInt(startLocations.size());
+                    if (randomNumLimit.indexOf(randomNum) < 0) {
+                        break;
+                    }
+                }
+                int aiLevel = Ai.GetType(bossInfos.elementAt(i));
+                ai = new Ai(bossInfos.elementAt(i), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
+                ai.InitEmotion("emotion_boss");
+                ai.teamID=2;
+                ais.add(ai);
+                randomNumLimit.add(randomNum);
+            }
+        }
         if (BT_MODE) {
             while (true) {
                 randomNum = ran.nextInt(startLocations.size());
@@ -598,28 +679,39 @@ public class Map {
             player = new Player(playerID2, startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this);
             player.uid = player.id + "_2";
             player.teamID = 2;
-            if (IS_SERVER)
+            if (IS_SERVER) {
                 player.InitEmotion("emotion_ai");
-            else
-                player.InitEmotion("emotion_player");
+            }
+            else {
+                player.InitEmotion("emotion_player_0" + player.teamID);
+                hostPlayer=player;
+            }
             players.add(player);
         } else {
             if (aiCount > startLocations.size() - 1) {
                 aiCount = startLocations.size() - 1;
             }
             int aiIndex = 0;
-            while (aiCount > 0) {
+            while (aiCount > 0&& randomNumLimit.size()<startLocations.size()) {
                 while (true) {
                     randomNum = ran.nextInt(startLocations.size());
                     if (randomNumLimit.indexOf(randomNum) < 0) {
                         break;
                     }
                 }
-                int aiLevel = Ai.IQ_30;
-                ai = new Ai(aiInfos.elementAt(aiIndex++), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
-                ai.InitEmotion("emotion_ai");
+                int aiLevel = Ai.GetType(aiInfos.elementAt(aiIndex));
+                ai = new Ai(aiInfos.elementAt(aiIndex), startLocations.elementAt(randomNum).x, startLocations.elementAt(randomNum).y, this, aiLevel);
+                if(aiGroupInfo!=null){
+                    try {
+                        ai.teamID=Integer.parseInt(aiGroupInfo.split(",")[aiIndex]);
+                    }catch (Exception e){
+                        ai.teamID=2;
+                    }
+                }
+                ai.InitEmotion("emotion_ai_0"+ai.teamID);
                 ais.add(ai);
                 randomNumLimit.add(randomNum);
+                aiIndex++;
                 aiCount--;
             }
         }
@@ -826,40 +918,75 @@ public class Map {
         if (gameView.isGameEnd) {
             return;
         }
-        if (gameView.BT_MODE) {
-            for (Player player : players) {
-                if (player.uid.equals(gameView.playerID)) {
-                    if (player.IsDead) {
-                        gameView.isWin = false;
-                        gameView.isGameEnd = true;
-                    }
+        if(gameView.ENDLESS_MODE){
+            if(gameView.endlessSeconds!=0){
+                //死鬥存活模式下，存活一定秒數即可獲勝
+                int totalTime;
+                if (gameView.gameThread.endTime != -1) {
+                    totalTime = (int) ((gameView.gameThread.endTime - gameView.gameThread.startTime) / 1000);
                 } else {
-                    if (player.IsDead) {
-                        gameView.isWin = true;
-                        gameView.isGameEnd = true;
-                    }
+                    totalTime = (int) ((System.currentTimeMillis() - gameView.gameThread.startTime) / 1000);
+                }
+                if(totalTime>=gameView.endlessSeconds){
+                    gameView.isWin = true;
+                    gameView.isGameEnd = true;
                 }
             }
-        } else {
-            for (Player player : players) {
-                if (player.uid.equals(gameView.playerID)) {
-                    if (player.IsDead) {
+        }
+        if(!gameView.isGameEnd) {
+            if (gameView.BT_MODE) {
+                for (Player player : players) {
+                    if (player.uid.equals(gameView.playerID)) {
+                        if (player.IsDead) {
+                            gameView.isWin = false;
+                            gameView.isGameEnd = true;
+                        }
+                    } else {
+                        if (player.IsDead) {
+                            gameView.isWin = true;
+                            gameView.isGameEnd = true;
+                        }
+                    }
+                }
+            } else {
+                int playerTeamId=0;
+                boolean playerIsDead=false;
+                for (Player player : players) {
+                    if (player.uid.equals(gameView.playerID)) {
+                        playerTeamId=player.teamID;
+                        playerIsDead=player.IsDead;
+                    }
+                }
+                int aliveAiCount = 0,aliveTeamCount=0;
+                for (Ai ai : ais) {
+                    if (ai.type != Ai.GOAST) {
+                        if(ai.teamID==playerTeamId){
+                            if (!ai.IsDead) {
+                                aliveTeamCount++;
+                            }
+                        }else {
+                            if (!ai.IsDead) {
+                                aliveAiCount++;
+                            }
+                        }
+                    }
+                }
+                if(aliveTeamCount==0){
+                    if(gameView.SURVIVE_WITH_TEAMMATE){
+                        //如果要保護AI的話，就不能讓AI死掉...但是自己可以去死一死xDDDD
+                        gameView.isWin = false;
+                        gameView.isGameEnd = true;
+                    }
+                    if(playerIsDead) {
                         gameView.isWin = false;
                         gameView.isGameEnd = true;
                     }
                 }
-            }
-            int aliveAiCount = 0;
-            for (Ai ai : ais) {
-                if (ai.type != Ai.GOAST) {
-                    if (!ai.IsDead) {
-                        aliveAiCount++;
-                    }
+                //平局的情況讓玩家獲勝
+                if (aliveAiCount == 0) {
+                    gameView.isWin = true;
+                    gameView.isGameEnd = true;
                 }
-            }
-            if (aliveAiCount == 0) {
-                gameView.isWin = true;
-                gameView.isGameEnd = true;
             }
         }
         if (gameView.isGameEnd) {

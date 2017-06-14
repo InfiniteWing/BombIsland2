@@ -14,7 +14,7 @@ public class Explosion {
     public Boolean IsEnd;
     public Map map;
 
-    public Explosion(Location location) {
+    public Explosion(Location location, MapObject bomb) {
         this.location = location;
         this.map = Common.gameView.map;
         IsEnd = false;
@@ -25,6 +25,9 @@ public class Explosion {
         animation.source_height_unit = 10;
         animation.source_x = 0;
         animation.source_y = 5;
+        if (bomb != null) {
+            animation.source_y += bomb.animation.source_y;
+        }
         animation.step = 1;
         animation.total_step = 6;
         animation.ms_per_frame = Common.GAME_REFRESH * 1;
@@ -52,10 +55,9 @@ public class Explosion {
                     map.explosionLocations.add(location);
                     IsEnd = true;
                 }
-                map.explosionDP[location.x][location.y]=1;
-            }
-            else{
-                map.willExplosionDP[location.x][location.y]=1;
+                map.explosionDP[location.x][location.y] = 1;
+            } else {
+                map.willExplosionDP[location.x][location.y] = 1;
             }
             delay -= Common.GAME_REFRESH;
         }
@@ -63,7 +65,7 @@ public class Explosion {
 
     public void Draw(Canvas canvas) {
         if (!IsEnd && delay <= 0) {
-            if(animation.img==null){
+            if (animation.img == null) {
                 animation.InitImage();
             }
             canvas.drawBitmap(animation.img,
