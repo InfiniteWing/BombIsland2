@@ -465,6 +465,10 @@ public class Ai extends Player {
     }
 
     public void Move() {
+        UpdateBlur();
+        if (mount != null){
+            mount.UpdateBlur();
+        }
         if (revivalCounter++ < 0) {
             if (emotion != null) {
                 emotion.Play();

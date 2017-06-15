@@ -16,6 +16,8 @@ import java.util.Vector;
  */
 public class Player {
     public int player_x, player_y;
+    public int[] last_player_x=new int[Common.BLUR_FRAME];
+    public int[] last_player_y=new int[Common.BLUR_FRAME];
     public int teamID;
     public int bubbledTime, wb, wb_now, wb_max, speed, speed_now, speed_max, wb_power, wb_power_max;
     public Boolean IsDead, IsMoving, IsMount, IsBubbled;
@@ -28,6 +30,7 @@ public class Player {
     public int price, mountDeadCounter;
     public Vector<String> eatItems;
     public Explosion deadExplosion;
+    public Boolean blur=true;
     public MapObject emotion;
     public int totalBomb = 0, totalKill = 0, totalItem = 0, totalMount = 0, totalSave = 0, totalMove = 0,
             invincibleCounter = 0, revivalCounter = 0;
@@ -44,6 +47,12 @@ public class Player {
         this.id = id;
         player_x = x * Common.PLAYER_POSITION_RATE;
         player_y = y * Common.PLAYER_POSITION_RATE;
+        last_player_x[0]=player_x;
+        last_player_y[0]=player_y;
+        for(int i=1;i<Common.BLUR_FRAME;i++){
+            last_player_x[i]=last_player_x[i-1];
+            last_player_y[i]=last_player_y[i-1];
+        }
         character = new Character(this);
         mountDeadCounter = 0;
         teamID = 1;
@@ -183,6 +192,12 @@ public class Player {
             mount = new Player("mount_" + mapObject.mountID, 0, 0, map);
             mount.player_x = player_x;
             mount.player_y = player_y;
+            mount.last_player_x[0] = player_x;
+            mount.last_player_y[0] = player_y+350;
+            for(int i=1;i<Common.BLUR_FRAME;i++){
+                mount.last_player_x[i]=mount.last_player_x[i-1];
+                mount.last_player_y[i]=mount.last_player_y[i-1];
+            }
             mount.character.direction = character.direction;
             mount.IsMount = true;
             mount.character.InitImage();
@@ -409,8 +424,19 @@ public class Player {
             }
         }
     }
-
+    public void UpdateBlur(){
+        for(int i=Common.BLUR_FRAME-1;i>0;i--){
+            last_player_x[i]=last_player_x[i-1];
+            last_player_y[i]=last_player_y[i-1];
+        }
+        last_player_x[0]=player_x;
+        last_player_y[0]=player_y;
+    }
     public void Move() {
+        UpdateBlur();
+        if (mount != null){
+            mount.UpdateBlur();
+        }
         if (emotion != null) {
             emotion.Play();
         }

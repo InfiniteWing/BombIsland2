@@ -95,6 +95,16 @@ public class Character {
     }
 
     public void Draw(Canvas canvas) {
+        int[] last_tmp_x=new int[Common.BLUR_FRAME];
+        int[] last_tmp_y=new int[Common.BLUR_FRAME];
+        for(int i=0;i<Common.BLUR_FRAME;i++){
+            last_tmp_x[i]=player.last_player_x[i] + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
+            last_tmp_y[i]=player.last_player_y[i];
+            last_tmp_x[i]*=Common.gameView.screenWidth;
+            last_tmp_y[i]*=Common.gameView.screenHeight;
+            last_tmp_x[i]/= Common.PLAYER_POSITION_RATE;
+            last_tmp_y[i]/= Common.PLAYER_POSITION_RATE;
+        }
         int tmp_x = player.player_x + (Common.GAME_WIDTH_UNIT - Common.MAP_WIDTH_UNIT) * Common.PLAYER_POSITION_RATE / 2;
         int tmp_y = player.player_y;
         tmp_x *= Common.gameView.screenWidth;
@@ -159,6 +169,18 @@ public class Character {
                 if (img == null) {
                     InitImage();
                 }
+                if(player.character.direction!=Location.LOCATION_TOP) {
+                    for (int i = 0; i < Common.BLUR_FRAME; i++) {
+                        if (i % 2 == 0) {
+                            continue;
+                        }
+                        alphaPaint.setAlpha(150 - i * 20);
+                        canvas.drawBitmap(img,
+                                last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
+                                last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                    }
+                }
                 canvas.drawBitmap(img,
                         tmp_x / Common.GAME_WIDTH_UNIT,
                         tmp_y / Common.GAME_HEIGHT_UNIT,
@@ -167,12 +189,24 @@ public class Character {
                     if(player.invincibleCounter%32>=16){
                         alphaPaint.setAlpha(255-15*(player.invincibleCounter%32-16));
                     }else{
-                        alphaPaint.setAlpha(15*(player.invincibleCounter%32+1));
+                        alphaPaint.setAlpha(15 * (player.invincibleCounter % 32 + 1));
                     }
                     canvas.drawBitmap(map.imageCaches.get("shield.png"),
                             tmp_x / Common.GAME_WIDTH_UNIT,
                             tmp_y / Common.GAME_HEIGHT_UNIT,
                             alphaPaint);
+                }
+                if(player.character.direction==Location.LOCATION_TOP){
+                    for(int i=Common.BLUR_FRAME-1;i>=0;i--){
+                        if(i%2==0){
+                            continue;
+                        }
+                        alphaPaint.setAlpha(150-i*20);
+                        canvas.drawBitmap(img,
+                                last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
+                                last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
+                                alphaPaint);
+                    }
                 }
             }
         }

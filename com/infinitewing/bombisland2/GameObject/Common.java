@@ -36,6 +36,7 @@ import java.util.Random;
 public class Common {
     public static final int GAME_REFRESH = 40, GAME_BT_REFRESH = 3, GAME_WIDTH_UNIT = 20, GAME_HEIGHT_UNIT = 12, MAP_WIDTH_UNIT = 16, MAP_HEIGHT_UNIT = 12;
     public static GameView gameView;
+    public static final int BLUR_FRAME=6;
     public static int SCREEN_WIDTH = 1024, SCREEN_HEIGHT = 576, OLD_SCREEN_WIDTH, OLD_SCREEN_HEIGHT, PLAYER_POSITION_RATE = 1000;
     public static int DEFAULT_MONEY = 300000;
     public static String APP_UUID = "00001101-0000-1000-8000-00805f9b34fb", APP_NAME = "BombIsland2";
