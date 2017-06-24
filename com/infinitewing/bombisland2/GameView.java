@@ -109,6 +109,7 @@ public class GameView extends SurfaceView implements
         FPS = sp.getBoolean("FPS", false);
         controlMode = sp.getInt("controlMode", 0);
 
+
         this.gamebackgroundsound = gamebackgroundsound;
         screenWidth = Common.SCREEN_WIDTH;
         screenHeight = Common.SCREEN_HEIGHT;
@@ -305,15 +306,19 @@ public class GameView extends SurfaceView implements
                 try {
                     Bitmap directionOut = map.imageCaches.get("direction_out.png");
                     alphaPaint.setAlpha(110);
+                    double newX=touchInitX*screenWidth/Common.OLD_SCREEN_WIDTH;
+                    double newY=touchInitY*screenHeight/Common.OLD_SCREEN_HEIGHT;
                     canvas.drawBitmap(directionOut,
-                            (float) (touchInitX - widthOffset * 2),
-                            (float) (touchInitY - heightOffset * 2),
+                            (float) (newX - widthOffset * 2),
+                            (float) (newY - heightOffset * 2),
                             alphaPaint);
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
                     alphaPaint.setAlpha(50);
+                    newX=touchNowX*screenWidth/Common.OLD_SCREEN_WIDTH;
+                    newY=touchNowY*screenHeight/Common.OLD_SCREEN_HEIGHT;
                     canvas.drawBitmap(directionIn,
-                            (float) (touchNowX - widthOffset * 1),
-                            (float) (touchNowY - heightOffset * 1),
+                            (float) (newX - widthOffset * 1),
+                            (float) (newY - heightOffset * 1),
                             alphaPaint);
                 } catch (Exception e) {
                     e.getCause();
@@ -334,11 +339,14 @@ public class GameView extends SurfaceView implements
                 double widthOffset = screenWidth / Common.GAME_WIDTH_UNIT;
                 double heightOffset = screenHeight / Common.GAME_HEIGHT_UNIT;
                 try {
+
+                    double newX=touchNowX*screenWidth/Common.OLD_SCREEN_WIDTH;
+                    double newY=touchNowY*screenHeight/Common.OLD_SCREEN_HEIGHT;
                     Bitmap directionIn = map.imageCaches.get("direction_in.png");
                     alphaPaint.setAlpha(50);
                     canvas.drawBitmap(directionIn,
-                            (float) (touchNowX - widthOffset * 1),
-                            (float) (touchNowY - heightOffset * 1),
+                            (float) (newX - widthOffset * 1),
+                            (float) (newY - heightOffset * 1),
                             alphaPaint);
                 } catch (Exception e) {
                     e.getCause();
@@ -832,13 +840,15 @@ public class GameView extends SurfaceView implements
          */
     }
 
-    public void SetPlayerSkin() {
+    public void SetPlayerSetting() {
         SharedPreferences sp = context.getSharedPreferences(Common.APP_NAME, context.MODE_PRIVATE);
         String bombSkin = sp.getString("bombSkin", "bomb1");
+        Boolean playerBlurOn=sp.getBoolean(Common.STORE_PLAYER_BLUR_ON, true);
         for (Player player : map.players) {
             try {
                 if (player.uid.equals(playerID)) {
                     player.bombSkin = bombSkin;
+                    player.blur=playerBlurOn;
                 }
             } catch (Exception e) {
                 e.getCause();

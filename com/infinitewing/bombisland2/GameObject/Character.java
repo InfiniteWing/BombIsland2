@@ -170,15 +170,17 @@ public class Character {
                     InitImage();
                 }
                 if(player.character.direction!=Location.LOCATION_TOP) {
-                    for (int i = 0; i < Common.BLUR_FRAME; i++) {
-                        if (i % 2 == 0) {
-                            continue;
+                    if(player.blur) {
+                        for (int i = 0; i < Common.BLUR_FRAME; i++) {
+                            if (i % 2 == 0) {
+                                continue;
+                            }
+                            alphaPaint.setAlpha(150 - i * 20);
+                            canvas.drawBitmap(img,
+                                    last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
+                                    last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
+                                    alphaPaint);
                         }
-                        alphaPaint.setAlpha(150 - i * 20);
-                        canvas.drawBitmap(img,
-                                last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
-                                last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
-                                alphaPaint);
                     }
                 }
                 canvas.drawBitmap(img,
@@ -197,15 +199,17 @@ public class Character {
                             alphaPaint);
                 }
                 if(player.character.direction==Location.LOCATION_TOP){
-                    for(int i=Common.BLUR_FRAME-1;i>=0;i--){
-                        if(i%2==0){
-                            continue;
+                    if(player.blur) {
+                        for (int i = Common.BLUR_FRAME - 1; i >= 0; i--) {
+                            if (i % 2 == 0) {
+                                continue;
+                            }
+                            alphaPaint.setAlpha(150 - i * 20);
+                            canvas.drawBitmap(img,
+                                    last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
+                                    last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
+                                    alphaPaint);
                         }
-                        alphaPaint.setAlpha(150-i*20);
-                        canvas.drawBitmap(img,
-                                last_tmp_x[i] / Common.GAME_WIDTH_UNIT,
-                                last_tmp_y[i] / Common.GAME_HEIGHT_UNIT,
-                                alphaPaint);
                     }
                 }
             }

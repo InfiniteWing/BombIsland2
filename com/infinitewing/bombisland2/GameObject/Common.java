@@ -36,7 +36,7 @@ import java.util.Random;
 public class Common {
     public static final int GAME_REFRESH = 40, GAME_BT_REFRESH = 3, GAME_WIDTH_UNIT = 20, GAME_HEIGHT_UNIT = 12, MAP_WIDTH_UNIT = 16, MAP_HEIGHT_UNIT = 12;
     public static GameView gameView;
-    public static final int BLUR_FRAME=6;
+    public static final int BLUR_FRAME = 6;
     public static int SCREEN_WIDTH = 1024, SCREEN_HEIGHT = 576, OLD_SCREEN_WIDTH, OLD_SCREEN_HEIGHT, PLAYER_POSITION_RATE = 1000;
     public static int DEFAULT_MONEY = 300000;
     public static String APP_UUID = "00001101-0000-1000-8000-00805f9b34fb", APP_NAME = "BombIsland2";
@@ -50,7 +50,9 @@ public class Common {
             STORE_BOMBSKIN_YELLOW = "BombSkin_bomb_yellow",
             STORE_BOMBSKIN_PURPLE = "BombSkin_bomb_purple",
             STORE_BOMBSKIN_BLUE = "BombSkin_bomb_blue",
-            STORE_BOMBSKIN_RED = "BombSkin_bomb_red";
+            STORE_BOMBSKIN_RED = "BombSkin_bomb_red",
+            STORE_PLAYER_BLUR = "Player_blur",
+            STORE_PLAYER_BLUR_ON = "Player_blur_on";
 
     public static void SetGameView(GameView gameView2) {
         gameView = gameView2;
@@ -211,7 +213,8 @@ public class Common {
         mSaveGameData += ";";
 
         boolean BGM, effSound, effVibrator, FPS, bitmapOpt, Guide_Bluetooth, Guide_Game,
-                BombSkinYellow, BombSkinBlue, BombSkinRed, BombSkinPurple;
+                BombSkinYellow, BombSkinBlue, BombSkinRed, BombSkinPurple,
+                PlayerBlur,PlayerBlurOn;
         int controlMode, resolutionMode, StoryStage_UnityChan, CashItemRevive, CashItemShield;
         String hero, bombSkin;
         String settingRecords = "";
@@ -235,6 +238,8 @@ public class Common {
         BombSkinRed = sp.getBoolean(Common.STORE_BOMBSKIN_RED, false);
         BombSkinPurple = sp.getBoolean(Common.STORE_BOMBSKIN_PURPLE, false);
         bombSkin = sp.getString("bombSkin", Common.DEFAULT_BOMBSKIN);
+        PlayerBlur = sp.getBoolean(Common.STORE_PLAYER_BLUR, true);//4.30版預設擁有殘影造型
+        PlayerBlurOn = sp.getBoolean(Common.STORE_PLAYER_BLUR_ON, true);//4.30版預設殘影開啟
         settingRecords += String.valueOf(BGM) + "," +
                 String.valueOf(effSound) + "," +
                 String.valueOf(effVibrator) + "," +
@@ -272,7 +277,14 @@ public class Common {
                 String.valueOf(BombSkinBlue) + "," +
                 String.valueOf(BombSkinRed) + "," +
                 String.valueOf(BombSkinPurple) + "," +
-                bombSkin;
+                bombSkin + "," +
+                /*
+                 *  4.30版後新增移動殘影特效
+                 *  PlayerBlur          [18]
+                 *  PlayerBlurOn        [19]
+                 */
+                String.valueOf(PlayerBlur) + "," +
+                String.valueOf(PlayerBlurOn);
         mSaveGameData += settingRecords;
         return mSaveGameData;
     }
@@ -290,7 +302,8 @@ public class Common {
 
             String settingRecords[] = record[3].split(",");
             boolean BGM, effSound, effVibrator, FPS, bitmapOpt, Guide_Bluetooth, Guide_Game,
-                    BombSkinYellow, BombSkinBlue, BombSkinRed, BombSkinPurple;
+                    BombSkinYellow, BombSkinBlue, BombSkinRed, BombSkinPurple,
+                    PlayerBlur,PlayerBlurOn;
             int controlMode, resolutionMode, StoryStage_UnityChan, CashItemRevive, CashItemShield;
             String hero, bombSkin;
             BGM = Boolean.valueOf(settingRecords[0]);
@@ -322,6 +335,18 @@ public class Common {
              *  BombSkinPurple      [16]
              *  bombSkin            [17]    設定使用的炸彈造型
              */
+            /*
+             *  4.30版後新增移動殘影特效
+             *  PlayerBlur          [18]
+             *  PlayerBlurOn        [19]
+             */
+            if (settingRecords.length > 18) {
+                PlayerBlur = Boolean.valueOf(settingRecords[18]);
+                PlayerBlurOn = Boolean.valueOf(settingRecords[19]);
+            } else {
+                PlayerBlur = true;
+                PlayerBlurOn = true;
+            }
             if (settingRecords.length > 11) {
                 try {
                     CashItemRevive = Integer.parseInt(settingRecords[11]);
@@ -399,6 +424,8 @@ public class Common {
                     .putBoolean(Common.STORE_BOMBSKIN_RED, BombSkinRed)
                     .putBoolean(Common.STORE_BOMBSKIN_PURPLE, BombSkinPurple)
                     .putString("bombSkin", bombSkin)
+                    .putBoolean(Common.STORE_PLAYER_BLUR, PlayerBlur)
+                    .putBoolean(Common.STORE_PLAYER_BLUR_ON, PlayerBlurOn)
                     .commit();
         } catch (Exception e) {
             e.getCause();

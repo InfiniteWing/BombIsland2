@@ -30,7 +30,7 @@ public class Player {
     public int price, mountDeadCounter;
     public Vector<String> eatItems;
     public Explosion deadExplosion;
-    public Boolean blur=true;
+    public Boolean blur=false;
     public MapObject emotion;
     public int totalBomb = 0, totalKill = 0, totalItem = 0, totalMount = 0, totalSave = 0, totalMove = 0,
             invincibleCounter = 0, revivalCounter = 0;
@@ -198,6 +198,7 @@ public class Player {
                 mount.last_player_x[i]=mount.last_player_x[i-1];
                 mount.last_player_y[i]=mount.last_player_y[i-1];
             }
+            mount.blur=blur;
             mount.character.direction = character.direction;
             mount.IsMount = true;
             mount.character.InitImage();

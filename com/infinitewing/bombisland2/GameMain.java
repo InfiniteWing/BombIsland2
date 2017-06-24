@@ -104,7 +104,7 @@ public class GameMain extends Activity {
                 intent.getStringExtra("ai_info"), intent.getStringExtra("teammate_info"), intent.getStringExtra("boss_info")
                 , gamebackgroundsound, endlessMode, intent.getIntExtra("player_group", 1), intent.getStringExtra("ai_group_info"));
         gameView.endlessSeconds = endlessSeconds;
-        gameView.SetPlayerSkin();
+        gameView.SetPlayerSetting();
         gameView.SURVIVE_WITH_TEAMMATE = surviveWithTeammate;
         if (cashItemShield > 0) {
             gameView.cashItemShield = 1;

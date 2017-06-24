@@ -28,7 +28,8 @@ import java.util.Set;
  * Created by Administrator on 2017/2/2.
  */
 public class GameSetting extends Activity {
-    private boolean BGM, effSound, effVibrator, FPS, bitmapOpt;
+    private boolean BGM, effSound, effVibrator, FPS, bitmapOpt,
+            playerBlur,playerBlurOn;
     private int controlMode, resolutionMode;
     private SharedPreferences sp;
     private String bombSkin;
@@ -48,12 +49,59 @@ public class GameSetting extends Activity {
         bitmapOpt = sp.getBoolean("bitmapOpt", false);
         controlMode = sp.getInt("controlMode", 0);
         resolutionMode = sp.getInt("resolutionMode", 2);
-        bombSkin=sp.getString("bombSkin",Common.DEFAULT_BOMBSKIN);
+        bombSkin=sp.getString("bombSkin", Common.DEFAULT_BOMBSKIN);
+        playerBlur=sp.getBoolean(Common.STORE_PLAYER_BLUR, true);
+        playerBlurOn=sp.getBoolean(Common.STORE_PLAYER_BLUR_ON,true);
         ((Switch) findViewById(R.id.Setting_SW_1)).setChecked(BGM);
         ((Switch) findViewById(R.id.Setting_SW_2)).setChecked(effSound);
         ((Switch) findViewById(R.id.Setting_SW_3)).setChecked(effVibrator);
         ((Switch) findViewById(R.id.Setting_SW_4)).setChecked(FPS);
         ((Switch) findViewById(R.id.Setting_SW_5)).setChecked(bitmapOpt);
+        findViewById(R.id.Setting_BombSkin_Hint).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertDialog = new AlertDialog.Builder(GameSetting.this)
+                        .setTitle(R.string.game_setting_bomb_skin)
+                        .setMessage(R.string.game_setting_bomb_skin_hint)
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                Common.SetFullScreen(getWindow());
+                            }
+                        })
+                        .setPositiveButton(R.string.game_setting_submit, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+
+                            }
+                        }).create();
+                Common.SetAlertDialog(alertDialog);
+            }
+        });
+        findViewById(R.id.Setting_PlayerBlur_Hint).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alertDialog = new AlertDialog.Builder(GameSetting.this)
+                        .setTitle(R.string.game_setting_player_blur)
+                        .setMessage(R.string.game_setting_player_blur_hint)
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                Common.SetFullScreen(getWindow());
+                            }
+                        })
+                        .setPositiveButton(R.string.game_setting_submit, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+
+                            }
+                        }).create();
+                Common.SetAlertDialog(alertDialog);
+            }
+        });
+        if(!playerBlur){
+            ((Switch) findViewById(R.id.Setting_SW_6)).setEnabled(false);
+        }else {
+            ((Switch) findViewById(R.id.Setting_SW_6)).setChecked(playerBlurOn);
+        }
         if (controlMode == 0) {
             ((RadioGroup) findViewById(R.id.Setting_RG)).check(R.id.Setting_RB_1);
         } else if (controlMode == 1) {
@@ -95,6 +143,7 @@ public class GameSetting extends Activity {
         effVibrator = ((Switch) findViewById(R.id.Setting_SW_3)).isChecked();
         FPS = ((Switch) findViewById(R.id.Setting_SW_4)).isChecked();
         bitmapOpt = ((Switch) findViewById(R.id.Setting_SW_5)).isChecked();
+        playerBlurOn = ((Switch) findViewById(R.id.Setting_SW_6)).isChecked();
         switch (((RadioGroup) findViewById(R.id.Setting_RG)).getCheckedRadioButtonId()) {
             case R.id.Setting_RB_1:
                 controlMode = 0;
@@ -130,6 +179,7 @@ public class GameSetting extends Activity {
                 .putBoolean("effVibrator", effVibrator)
                 .putBoolean("FPS", FPS)
                 .putBoolean("bitmapOpt", bitmapOpt)
+                .putBoolean(Common.STORE_PLAYER_BLUR_ON, playerBlurOn)
                 .putInt("controlMode", controlMode)
                 .putInt("resolutionMode", resolutionMode)
                 .putString("bombSkin",bombSkin).commit();
